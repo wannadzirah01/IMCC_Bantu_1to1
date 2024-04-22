@@ -1,84 +1,106 @@
-from flask import Flask, jsonify, request
-from flask_sqlalchemy import SQLAlchemy
-import datetime
-from flask_marshmallow import Marshmallow
-from flask_cors import CORS
+from flask import Flask, request, jsonify, session
+from flask_bcrypt import Bcrypt
+from flask_cors import CORS, cross_origin
+from flask_session import Session
+
+from config import ApplicationConfig
+from models import db, User
 
 app = Flask(__name__)
-CORS(app)
+app.config.from_object(ApplicationConfig)
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:''@localhost/flask'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+bcrypt = Bcrypt(app)
+CORS(app, origins="http://localhost:3000" , supports_credentials=True)
+server_session = Session(app)
+db.init_app(app)
 
-db = SQLAlchemy(app)
-ma = Marshmallow(app)
+with app.app_context():
+    db.create_all()
 
+@app.route('/@me')
+def get_current_user():
+    user_id = session.get("user_id")
 
-class Articles(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(100))
-    body = db.Column(db.Text())
-    date = db.Column(db.DateTime, default=datetime.datetime.now)
+    if not user_id:
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    user = User.query.filter_by(id=user_id).first()
 
-    def __init__(self, title, body):
-        self.title = title
-        self.body = body
+    return jsonify({
+        "id": user.id,
+        "email": user.email,
+        "name": user.name,
+        "matric_number": user.matric_number,
+        "phone_number": user.phone_number,
+        "school": user.school,
+        "year_of_study": user.year_of_study
 
-
-class ArticleSchema(ma.Schema):
-    class Meta:
-        fields = ('id', 'title', 'body', 'date')
-
-
-article_schema = ArticleSchema()
-articles_schema = ArticleSchema(many=True)
-
-
-@app.route('/get', methods=['GET'])
-def get_articles():
-    all_articles = Articles.query.all()
-    results = articles_schema.dump(all_articles)
-    return jsonify(results)
+    })
 
 
-@app.route('/get/<id>/', methods=['GET'])
-def post_details(id):
-    article = Articles.query.get(id)
-    return article_schema.jsonify(article)
+@app.route('/register', methods=['POST'])
+def register_user():
+    email = request.json["email"]
+    password = request.json["password"]
+    name = request.json["name"]
+    matric_number = request.json["matricNumber"]
+    phone_number = request.json["phoneNumber"]
+    school = request.json["school"]
+    year_of_study = request.json["yearOfStudy"]
 
+    user_exists = User.query.filter_by(email=email).first() is not None
 
-@app.route('/add', methods=['POST'])
-def add_article():
-    title = request.json['title']
-    body = request.json['body']
-
-    articles = Articles(title, body)
-    db.session.add(articles)
-    db.session.commit()
-    return article_schema.jsonify(articles)
-
-
-@app.route('/update/<id>/', methods=['PUT'])
-def update_article(id):
-    article = Articles.query.get(id)
-
-    title = request.json['title']
-    body = request.json['body']
-
-    article.title = title
-    article.body = body
-
-    db.session.commit()
-    return article_schema.jsonify(article)
-
-
-@app.route('/delete/<id>/', methods=['DELETE'])
-def article_delete(id):
-    article = Articles.query.get(id)
-    db.session.delete(article)
+    if user_exists:
+        return jsonify({"error": "User already exist"}), 400
+        
+    hashed_password = bcrypt.generate_password_hash(password)
+    new_user = User(email=email, password=hashed_password, name=name, matric_number=matric_number, phone_number=phone_number, school=school, year_of_study=year_of_study)
+    db.session.add(new_user)
     db.session.commit()
 
-    return article_schema.jsonify(article)
+    session["user_id"] = new_user.id
+
+    return jsonify({
+        "id": new_user.id,
+        "email": new_user.email,
+        "name": new_user.name,
+        "matric_number": new_user.matric_number,
+        "phone_number": new_user.phone_number,
+        "school": new_user.school,
+        "year_of_study": new_user.year_of_study
+
+    })
+
+@app.route('/login', methods=['POST'])
+def login_user():
+    email = request.json["email"]
+    password = request.json["password"]
+
+    user = User.query.filter_by(email=email).first()
+
+    if user is None:
+        return jsonify({"error": "User with this email does not exist"}), 401
+    
+    if not bcrypt.check_password_hash(user.password, password):
+        return jsonify({"error": "Invalid credentials"}), 401
+    
+    session["user_id"] = user.id
+    
+    return jsonify({
+        "id": user.id,
+        "email": user.email,
+        "name": user.name,
+        "matric_number": user.matric_number,
+        "phone_number": user.phone_number,
+        "school": user.school,
+        "year_of_study": user.year_of_study
+
+    })
+
+@app.route("/logout", methods=["POST"])
+def logout_user():
+    session.pop("user_id")
+    return "200"
 
 
 if __name__ == "__main__":

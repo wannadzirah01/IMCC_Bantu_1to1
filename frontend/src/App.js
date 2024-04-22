@@ -1,81 +1,30 @@
+import React from 'react';
 import './App.css';
-import { useState, useEffect } from 'react';
-import ArticleList from './components/ArticleList';
-import Form from './components/Form';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import HomePage from './pages/HomePage';
+import Login from './components/Login';
+import Register from './components/Register';
+import NavBar from './components/NavBar';
+import TicketMonitoring from './pages/TicketMonitoring';
+import Forum from './pages/Forum';
+import User from './pages/User';
 
-function App() {
-
-  const [articles, setArticles] = useState([])
-  const [editedArticle, setEditedArticle] = useState(null)
-
-  useEffect(() => {
-    fetch('http://127.0.0.1:5000/get', {
-      'method': 'GET',
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    })
-      .then(resp => resp.json())
-      .then(resp => setArticles(resp))
-      .catch(error => console.log(error))
-  }, [])
-
-  const editArticle = (article) => {
-    setEditedArticle(article)
-  }
-
-  const updatedData = (article) => {
-    const new_article = articles.map(my_article => {
-      if (my_article.id == article.id) {
-        return article
-      } else {
-        return my_article
-      }
-    })
-    setArticles(new_article)
-  }
-
-  const openForm = () => {
-    setEditedArticle({ title: '', body: '' })
-  }
-
-  const insertedArticle = (article) => {
-    const new_articles = [...articles, article]
-    setArticles(new_articles)
-  }
-
-  const deleteArticle = (article) => {
-    const new_articles = articles.filter(myarticle => {
-      if (myarticle.id == article.id) {
-        return false;
-      }
-      return true
-    })
-
-    setArticles(new_articles)
-  }
-
+const App = () => {
   return (
     <div className="App">
-      <div className="row">
-        <div className="col">
-          <h1>Flask and ReactJS Course</h1>
-        </div>
-
-        <div className="col">
-          <button
-            className="btn btn-success"
-            onClick={openForm}
-          >InsertArticle</button>
-        </div>
-      </div>
-
-      <ArticleList articles={articles} editArticle={editArticle} deleteArticle={deleteArticle} />
-
-      {editedArticle ? <Form article={editedArticle} updatedData={updatedData} insertedArticle={insertedArticle} /> : null}
-
+    <BrowserRouter>
+    <NavBar />
+    <Routes>
+      <Route path="/" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+      <Route path="/home" element={<HomePage />} />
+      <Route path="/ticketMonitoring" element={<TicketMonitoring />} />
+      <Route path="/forum" element={<Forum />} />
+      <Route path="/@me" element={<User />} />
+    </Routes>
+    </BrowserRouter>
     </div>
   );
-}
+};
 
-export default App;
+export default App

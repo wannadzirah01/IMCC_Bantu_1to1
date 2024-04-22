@@ -1,6 +1,47 @@
 .App {
-  background-color: #282c34;
+  background-color: rgb(254, 218, 232);
   min-height: 100vh;
+}
+
+.login-form, .register-form {
   color: white;
-  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  padding: 10px 0;
+  align-items: center;
+}
+
+.auth-form-container {
+  margin: 0 20rem;
+  padding: 5rem;
+  text-align: center;
+  border-radius: 10px; 
+  background-color: #491D74;
+}
+
+.divider{
+  width: 1rem;
+  height: 1rem;
+  display: inline-block;
+}
+
+.label {
+  text-align: left;
+  padding: 0.5rem 0;
+}
+
+input {
+  margin: 0.5rem 0;
+  width: 20rem;
+}
+
+button {
+  background-color: #f68b1e;
+  color: white;
+  width: fit-content;
+  padding: 5px;
+}
+
+.link-btn {
+  color: white;
 }
