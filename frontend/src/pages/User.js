@@ -30,7 +30,7 @@ const User = () => {
             <div className="profile-user-info">
                 {userData && (
                     <>
-                        <div className='profile-info-row'><div className='profile-info-name'>Email:</div> <div className='profile-info-value'>{userData.email}</div></div>
+                        <p><strong>Email:</strong> {userData.email}</p>
                         <p><strong>Name:</strong> {userData.name}</p>
                         <p><strong>Matric Number:</strong> {userData.matric_number}</p>
                         <p><strong>Phone Number:</strong> {userData.phone_number}</p>
