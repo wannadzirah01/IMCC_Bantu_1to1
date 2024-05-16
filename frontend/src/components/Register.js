@@ -56,8 +56,9 @@ const Register = (props) => {
             <input value={yearOfStudy} onChange={(e) => setYearOfStudy(e.target.value)} id="yearOfStudy" placeholder="1, 2, 3, 4, or 5" />
 
             <div class="divider"/>
-            
+            <div className="button-general">
             <button type="submit" onClick={(e) => handleSubmit(e)} >Register</button>
+            </div>
         </form><Link to="/" className="link-btn" >Already have an account? Login here</Link></div>
     )
 }

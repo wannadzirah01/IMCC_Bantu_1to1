@@ -9,8 +9,9 @@ export default function NavBar() {
         </Link>
         <ul>
             <CustomLink to="/@me">User</CustomLink>
-            <CustomLink to="/ticketMonitoring">Ticket Monitoring</CustomLink>
+            <CustomLink to="/ticketMonitoring">Bantu Packages</CustomLink>
             <CustomLink to="/forum">Forum</CustomLink>
+            <CustomLink to="/invoiceStatus">Invoice Status</CustomLink>
         </ul>
     </nav>
 }
