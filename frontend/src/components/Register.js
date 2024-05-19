@@ -1,9 +1,8 @@
-import React, { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import React, { useState } from "react"; 
 import axios from '../api/axios';
+import { Link, useNavigate } from "react-router-dom"
 
 const Register = (props) => {
-
     const navigate = useNavigate();
 
     const [email, setEmail] = useState("");
@@ -21,7 +20,7 @@ const Register = (props) => {
                 { email, password, name, matricNumber, phoneNumber, school, yearOfStudy});
             alert("Successful user registration")
 
-            navigate("/@me");
+            navigate("/");
         } catch (err) {
             if (err.response && err.response.status === 400) {
                 alert('User already exist. Please Login');

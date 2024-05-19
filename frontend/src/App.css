@@ -96,3 +96,29 @@ button {
   background-color: #d96e03;
 }
 
+/* InvoiceStatus.css */
+.dropdown-menu {
+    display: inline-block;
+    margin-left: 10px;
+}
+
+.dropdown-menu select {
+    padding: 5px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    font-size: 14px;
+}
+
+.dropdown-menu select:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+}
+
+.link :hover{
+  background-color: #777;
+}
+
+
+
+

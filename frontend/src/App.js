@@ -1,32 +1,45 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import "./App.css";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import HomePage from "./pages/HomePage";
 import Login from "./components/Login";
 import Register from "./components/Register";
 import NavBar from "./components/NavBar";
 import TicketMonitoring from "./pages/TicketMonitoring";
 import Forum from "./pages/Forum";
 import User from "./pages/User";
-import { UserProvider } from "./components/UserContext";
+import Status from "./pages/InvoiceStatus";
+import axios from "./api/axios";
 
 const App = () => {
+  const [userRole, setUserRole] = useState('');
+
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      try {
+        const response = await axios.get('http://localhost:5000/getUserRole', { withCredentials: true });
+        setUserRole(response.data.role);
+      } catch (error) {
+        console.error('Error fetching user role:', error);
+      }
+    };
+
+    fetchUserRole();
+  }, []);
+
   return (
-    <UserProvider>
-      <div className="App">
-        <BrowserRouter>
-          <NavBar />
-          <Routes>
-            <Route path="/" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/home" element={<HomePage />} />
-            <Route path="/ticketMonitoring" element={<TicketMonitoring />} />
-            <Route path="/forum" element={<Forum />} />
-            <Route path="/@me" element={<User />} />
-          </Routes>
-        </BrowserRouter>
-      </div>
-    </UserProvider>
+    <div className="App">
+      <BrowserRouter>
+        <NavBar userRole={userRole} setUserRole={setUserRole} />
+        <Routes>
+          <Route path="/" element={<Login setUserRole={setUserRole} />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/ticketMonitoring" element={<TicketMonitoring />} />
+          <Route path="/forum" element={<Forum />} />
+          <Route path="/@me" element={<User />} />
+          <Route path="/invoiceStatus" element={<Status />} />
+        </Routes>
+      </BrowserRouter>
+    </div>
   );
 };
 

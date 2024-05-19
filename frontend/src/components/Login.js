@@ -3,22 +3,20 @@ import { useNavigate, Link } from "react-router-dom";
 import axios from "../api/axios";
 import "../App.css";
 
-const Login = (props) => {
+const Login = ({ setUserRole }) => {
   const navigate = useNavigate();
-
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [userID, setUserID] = useState(null); // Add state for userID
 
   const handleSubmit = async (event) => {
     event.preventDefault();
     try {
-      const response = await axios.post("http://localhost:5000/login", { email, password });
+      const response = await axios.post("http://localhost:5000/login", { email, password }, { withCredentials: true });
       alert("Successful user login");
 
-      // Retrieve userID from the server response and store it in state
-      const { userID } = response.data;
-      setUserID(userID);
+      // Fetch the user role to update the NavBar
+      const userRoleResponse = await axios.get('http://localhost:5000/getUserRole', { withCredentials: true });
+      setUserRole(userRoleResponse.data.role);
 
       // Redirect to the ticket monitoring page
       navigate("/ticketMonitoring");
@@ -33,7 +31,6 @@ const Login = (props) => {
     <div className="auth-form-container">
       <form className="login-form" onSubmit={handleSubmit}>
         <h2>Log In</h2>
-
         <label htmlFor="email">Student Email</label>
         <input
           value={email}
@@ -43,7 +40,6 @@ const Login = (props) => {
           id="email"
           name="email"
         />
-
         <label htmlFor="password">Password</label>
         <input
           value={password}
@@ -53,9 +49,7 @@ const Login = (props) => {
           id="password"
           name="password"
         />
-
-        <div class="divider" />
-
+        <div className="divider" />
         <div className="button-general">
           <button type="submit">Login</button>
         </div>

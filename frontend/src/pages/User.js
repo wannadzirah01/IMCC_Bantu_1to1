@@ -22,7 +22,7 @@ const User = () => {
     fetchUserProfile();
   }, []);
 
-  return (
+  return userData ? (
     <div className="profile-container">
   <div className="profile-user-info">
     <h2>User Profile</h2>
@@ -36,12 +36,9 @@ const User = () => {
         <p><strong>Year of Study:</strong> {userData.year_of_study}</p>
       </>
     )}
-    <div className="button-general">
-      <button onClick={logoutUser}>Logout</button>
-    </div>
   </div>
 </div>
-  );
+  ) : "You need to log in to view this content.";
 };
 
 export default User;

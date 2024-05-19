@@ -1,0 +1,75 @@
+/* In your CSS file (e.g., App.css) */
+.navigation-bar {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 20px;
+    background-color: #ffffff;
+}
+
+.navigation-bar button {
+    padding: 10px 20px;
+    border: none;
+    background-color: #ffffff;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    color: #000000;
+}
+
+.navigation-bar button:hover {
+    color: #f68b1e;
+}
+
+.package-container {
+    border: 1px solid #ddd;
+    padding: 20px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+}
+
+.package-info {
+    margin-bottom: 10px;
+}
+
+.button-general button {
+    padding: 10px 15px;
+    margin-top: 10px;
+}
+
+select {
+    padding: 5px;
+    margin-left: 10px;
+}
+
+input[type="file"] {
+    margin-top: 10px;
+}
+
+input[type="text"] {
+    margin-top: 10px;
+    padding: 5px;
+    margin-left: 10px;
+}
+
+.button-container-invoice {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+  }
+  
+  .button-container-invoice input[type="file"] {
+    margin-right: 1px;
+  }
+  
+  .button-container-invoice button {
+    background-color: #f68b1e;
+    color: #fff;
+    border: none;
+    padding: 10px 10px;
+    cursor: pointer;
+    border-radius: 5px;
+  }
+  
+  .button-container-invoice button:hover {
+    background-color: #d96e03;
+  }

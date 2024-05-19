@@ -1,27 +1,41 @@
-import React, { useState, useEffect, useRef } from "react";
-import axios from "axios";
-import { useUser } from "../components/UserContext";
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
+import { Link, useNavigate } from "react-router-dom";
 
-function GetPackageList() {
+function PackageList() {
   const [packages, setPackages] = useState([]);
   const [selectedFiles, setSelectedFiles] = useState({});
-  const { userID } = useUser();
   const [error, setError] = useState(null);
+  const navigate = useNavigate();
 
-  // Create refs for file inputs to reset them
-  const fileInputRefs = useRef({});
+  const [userRole, setUserRole] = useState('');
 
   useEffect(() => {
-    const fetchData = async () => {
+      const fetchUserRole = async () => {
+          try {
+              const response = await axios.get('http://localhost:5000/getUserRole', { withCredentials: true });
+              setUserRole(response.data.role);
+          } catch (error) {
+              console.error('Error fetching user role:', error);
+          }
+      };
+
+      fetchUserRole();
+  }, []);
+
+
+  useEffect(() => {
+    const fetchPackages = async () => {
       try {
-        const response = await axios.get("http://localhost:5000/packageListing");
+        const response = await axios.get('http://localhost:5000/packageListing', { withCredentials: true });
         setPackages(response.data);
       } catch (error) {
-        console.error("Error fetching data:", error);
+        console.error('Error fetching packages:', error);
+        setError('You need to log in to view this content.');
       }
     };
 
-    fetchData();
+    fetchPackages();
   }, []);
 
   const handleFileChange = (packageId, event) => {
@@ -32,69 +46,59 @@ function GetPackageList() {
     setError(null); // Reset error when a new file is selected
   };
 
-  const handleButtonClick = async (packageId) => {
+  const handleUpload = async (packageId) => {
     const selectedFile = selectedFiles[packageId];
     if (!selectedFile) {
-      alert("Please select a file.");
+      alert('Please select a file.');
       return;
     }
 
     try {
       const formData = new FormData();
-      formData.append("file", selectedFile);
-      formData.append("package_id", packageId);
-      formData.append("user_id", userID);
-
-      await axios.post("http://localhost:5000/uploadInvoice", formData, {
+      formData.append('file', selectedFile);
+      formData.append('package_id', packageId);
+    
+      await axios.post('http://localhost:5000/uploadInvoice', formData, {
+        withCredentials: true,
         headers: {
-          "Content-Type": "multipart/form-data",
+          'Content-Type': 'multipart/form-data',
         },
       });
 
-      setError(null);
-      setSelectedFiles({
-        ...selectedFiles,
-        [packageId]: null,
-      });
-
-      // Reset the file input
-      if (fileInputRefs.current[packageId]) {
-        fileInputRefs.current[packageId].value = null;
-      }
-
-      alert("Invoice uploaded successfully");
+      alert('Invoice uploaded successfully');
+      navigate("/invoiceStatus");
     } catch (error) {
+      console.error('Error uploading file:', error);
       setError(error.response ? error.response.data.error : error.message);
     }
   };
 
-  return (
+  if (error) {
+    return <div>{error}</div>;
+  }
+
+  return userRole? (
     <div>
       <h1>Bantu Packages</h1>
-      <p>Select a package that you have bought and upload the invoice of the payment.</p>
-      {error && <p style={{ color: "red" }}>{error}</p>}
-      {packages.map((packageList) => (
-        <div key={packageList.id} className="package-container">
+      {packages.map(packageItem => (
+        <div key={packageItem.id} className="package-container">
           <div className="package-info">
-            <h4>{packageList.title}</h4>
-            <p>{packageList.description}</p>
-            <p>Price: RM {packageList.price}</p>
+            <h4>{packageItem.title}</h4>
+            <p>{packageItem.description}</p>
+            <p>Price: RM {packageItem.price}</p>
           </div>
           <div className="button-container">
             <input
               type="file"
-              onChange={(event) => handleFileChange(packageList.id, event)}
-              accept="image/*,application/pdf" // Adjust based on allowed file types
-              ref={(el) => (fileInputRefs.current[packageList.id] = el)} // Set ref for file input
+              onChange={(event) => handleFileChange(packageItem.id, event)}
+              accept="image/*,application/pdf"
             />
-            <button onClick={() => handleButtonClick(packageList.id)}>
-              Upload Invoice
-            </button>
+            <button onClick={() => handleUpload(packageItem.id)}>Upload Invoice</button>
           </div>
         </div>
       ))}
     </div>
-  );
+  ) : "You need to log in to view this content.";
 }
 
-export default GetPackageList;
+export default PackageList;
