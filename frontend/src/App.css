@@ -120,5 +120,81 @@ button {
 }
 
 
+.package-request-form {
+  display: flex;
+  flex-direction: column;
+}
 
+.package-request-form .form-group {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1em;
+}
 
+.package-request-form label {
+  flex: 0 0 150px; /* Adjust the width as needed */
+  margin-right: 1em;
+}
+
+.package-request-form input {
+  flex: 1;
+  padding: 0.5em;
+}
+
+.button-general {
+  text-align: right;
+}
+
+.status-section {
+  display: flex;
+  align-items: center;
+  gap: 10px; /* Adjust gap as needed */
+}
+
+.status-section p {
+  margin: 0;
+}
+
+.status-dropdown {
+  margin-left: 10px; /* Adjust margin as needed */
+}
+
+.form-group {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.form-group label {
+  flex: 1;
+  margin-right: 1rem;
+}
+
+.form-group .input-field {
+  flex: 2;
+}
+
+.input-field,
+.editable-input {
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.status-section {
+  margin-top: 1rem;
+}
+
+.status-dropdown {
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.button-general {
+  margin-top: 1rem;
+}

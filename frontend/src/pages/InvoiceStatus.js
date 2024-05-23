@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import '../InvoiceStatus.css';
+import PackageRequestForm from './PackageRequestForm';  
 
 const InvoiceStatus = () => {
     const [invoiceList, setInvoiceList] = useState([]);
@@ -8,8 +9,8 @@ const InvoiceStatus = () => {
     const [userRole, setUserRole] = useState('');
     const [filterStatus, setFilterStatus] = useState('All');
     const [selectedFile, setSelectedFile] = useState(null);
-    const [remarks, setRemarks] = useState({}); // To manage remarks for each invoice
-    const [editableInvoice, setEditableInvoice] = useState(null); // To keep track of the editable invoice item
+    const [remarks, setRemarks] = useState({});
+    const [editableInvoice, setEditableInvoice] = useState(null);
 
     useEffect(() => {
         const fetchUserRole = async () => {
@@ -40,10 +41,9 @@ const InvoiceStatus = () => {
                 const data = Array.isArray(response.data) ? response.data : [];
                 setInvoiceList(data);
 
-                // Set initial remarks
                 const initialRemarks = {};
                 data.forEach(invoice => {
-                    if (invoice.invoice_status === 'Rejected') {
+                    if (invoice.invoice_status === 'Payment Rejected') {
                         initialRemarks[invoice.invoice_id] = invoice.remarks;
                     }
                 });
@@ -72,13 +72,13 @@ const InvoiceStatus = () => {
                 invoice_status: newStatus,
             };
 
-            if (newStatus === 'Rejected') {
+            if (newStatus === 'Payment Rejected') {
                 payload.remarks = remarks[invoiceId] || '';
             }
 
             const response = await axios.post('http://localhost:5000/updateInvoiceStatus', payload, { withCredentials: true });
             setInvoiceList(invoiceList.map(invoice => invoice.invoice_id === invoiceId ? { ...invoice, invoice_status: newStatus, remarks: payload.remarks } : invoice));
-            setEditableInvoice(null); // Reset editable invoice after saving
+            setEditableInvoice(null);
         } catch (error) {
             console.error('Error updating invoice status:', error);
         }
@@ -107,18 +107,14 @@ const InvoiceStatus = () => {
             
             alert('Invoice uploaded successfully');
             console.log(response.data);
-            // Update the invoice status in the state
-            // Extract the new file name from the response
             const newFileName = response.data.file_name;
 
-            // Update the invoice status and file name in the state
             setInvoiceList(invoiceList.map(invoice =>
                 invoice.invoice_id === invoiceId
-                    ? { ...invoice, invoice_status: 'Pending Approval', remarks: '', file_name: newFileName }
+                    ? { ...invoice, invoice_status: 'Pending Payment', remarks: '', file_name: newFileName }
                     : invoice
             ));
 
-            // Clear the selected file
             setSelectedFile(null);
         } catch (error) {
             console.error('Error uploading file:', error);
@@ -139,45 +135,58 @@ const InvoiceStatus = () => {
 
     const filteredInvoiceList = filterStatus === 'All'
         ? invoiceList
-        : invoiceList.filter(invoice => invoice.invoice_status === filterStatus);
+        : Array.isArray(filterStatus)
+            ? invoiceList.filter(invoice => filterStatus.includes(invoice.package_request_status))
+            : invoiceList.filter(invoice => invoice.package_request_status === filterStatus);
 
     return userRole ? (
         <div>
-            <h1>Invoice Status</h1>
+            <h1>Bantu Service Status</h1>
             <div className="navigation-bar">
                 <button onClick={() => setFilterStatus('All')}>All</button>
-                <button onClick={() => setFilterStatus('Pending Approval')}>Pending Approval</button>
-                <button onClick={() => setFilterStatus('Rejected')}>Rejected</button>
-                <button onClick={() => setFilterStatus('Approved')}>Approved</button>
+                <button onClick={() => setFilterStatus(['Pending Approval', 'Created', 'Rejected'])}>Pending Approval</button>
+                <button onClick={() => setFilterStatus('Active')}>Active</button>
+                <button onClick={() => setFilterStatus('Completed')}>Completed</button>
             </div>
             {loading ? (
                 <p>Loading...</p>
             ) : filteredInvoiceList.length === 0 ? (
-                <p>No invoices found.</p>
+                <p>No services found.</p>
             ) : (
                 filteredInvoiceList.map((invoiceItem, index) => (
                     <div key={index} className='package-container'>
-                        <div className='package-info'>
-                            <p><b>File Name:</b> {invoiceItem.file_name}</p>
+                        <div className='package-request-form'>
                             <p><b>Package:</b> {invoiceItem.package}</p>
+                            {userRole === 'admin' && (
+                                <>
+                                    <p><b>Client Name:</b> {invoiceItem.user_name}</p>
+                                    <p><b>Matric Number:</b> {invoiceItem.matric_number}</p>
+                                    <p><b>File Name:</b> {invoiceItem.file_name}</p>
+                                    <div className="button-general">
+                                        <button onClick={() => handleViewFile(invoiceItem.file_name)}>View File</button>
+                                        <div className="divider" />
+                                        <button onClick={() => handleEditClick(invoiceItem.invoice_id)}>Edit</button>
+                                    </div>
+                                </>
+                            )}
                             <p>
-                                <b>Status:</b> {userRole === 'admin' ? (
+                                <b>Invoice Status:</b> {userRole === 'admin' ? (
                                     <>
                                         {editableInvoice && editableInvoice.invoice_id === invoiceItem.invoice_id ? (
                                             <select 
                                                 onChange={(e) => setEditableInvoice({ ...editableInvoice, invoice_status: e.target.value })} 
                                                 value={editableInvoice.invoice_status}
                                             >
-                                                <option value="Pending Approval">Pending Approval</option>
-                                                <option value="Approved">Approved</option>
-                                                <option value="Rejected">Rejected</option>
+                                                <option value="Pending Payment">Pending Payment</option>
+                                                <option value="Payment Received">Payment Received</option>
+                                                <option value="Payment Rejected">Payment Rejected</option>
                                             </select>
                                         ) : (
                                             invoiceItem.invoice_status
                                         )}
                                         {editableInvoice && editableInvoice.invoice_id === invoiceItem.invoice_id && (
                                             <>
-                                                {editableInvoice.invoice_status === 'Rejected' && (
+                                                {editableInvoice.invoice_status === 'Payment Rejected' && (
                                                     <input 
                                                         type="text" 
                                                         placeholder="Rejection Reason" 
@@ -193,28 +202,25 @@ const InvoiceStatus = () => {
                                     invoiceItem.invoice_status
                                 )}
                             </p>
-                            {invoiceItem.invoice_status === 'Rejected' && userRole === 'client' && (
+                            {invoiceItem.invoice_status === 'Payment Rejected' && userRole === 'client' && (
                                 <div>
                                     <p><b>Rejection Reason:</b> {invoiceItem.remarks}</p>
                                     <div className='button-container-invoice'>
-                                    <div class="divider" />
-                                    <input type="file" onChange={handleFileUpload} />
-                                    <button onClick={() => handleSubmitUpload(invoiceItem.invoice_id)}>Upload Again</button>
-                                </div>
-                                </div>
-                                
-                            )}
-                            <p><b>Uploaded Date:</b> {invoiceItem.uploaded_datetime}</p>
-                            {userRole === 'admin' && (
-                                <>
-                                    <p><b>Client Name:</b> {invoiceItem.user_name}</p>
-                                    <p><b>Matric Number:</b> {invoiceItem.matric_number}</p>
-                                    <div className="button-general">
-                                        <button onClick={() => handleViewFile(invoiceItem.file_name)}>View File</button>
-                                        <div class="divider" />
-                                        <button onClick={() => handleEditClick(invoiceItem.invoice_id)}>Edit</button>
+                                        <div className="divider" />
+                                        <input type="file" onChange={handleFileUpload} />
+                                        <button onClick={() => handleSubmitUpload(invoiceItem.invoice_id)}>Upload Again</button>
                                     </div>
-                                </>
+                                </div>
+                            )}
+                            {((invoiceItem.invoice_status === 'Payment Received' && invoiceItem.package_request_status === 'Active') ||
+                            (invoiceItem.invoice_status === 'Payment Received' && invoiceItem.package_request_status === 'Pending Approval') ||
+                            (invoiceItem.invoice_status === 'Payment Received' && invoiceItem.package_request_status === 'Submitted') ||
+                            (invoiceItem.invoice_status === 'Payment Received' && invoiceItem.package_request_status === 'Created' && userRole === 'client')
+                        ) && (
+                                <PackageRequestForm 
+                                    invoiceId={invoiceItem.invoice_id} 
+                                    packageRequestId={invoiceItem.package_request_id} 
+                                />
                             )}
                         </div>
                     </div>

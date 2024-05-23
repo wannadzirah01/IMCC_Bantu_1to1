@@ -9,6 +9,7 @@ import Forum from "./pages/Forum";
 import User from "./pages/User";
 import Status from "./pages/InvoiceStatus";
 import axios from "./api/axios";
+import PackageRequest from "./pages/PackageRequestForm";
 
 const App = () => {
   const [userRole, setUserRole] = useState('');
@@ -37,6 +38,7 @@ const App = () => {
           <Route path="/forum" element={<Forum />} />
           <Route path="/@me" element={<User />} />
           <Route path="/invoiceStatus" element={<Status />} />
+          <Route path="/packageRequest" element={<PackageRequest />} />
         </Routes>
       </BrowserRouter>
     </div>
