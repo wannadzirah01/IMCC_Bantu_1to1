@@ -79,7 +79,7 @@ function PackageList() {
 
   return userRole? (
     <div>
-      <h1>Bantu Packages</h1>
+      <h2>Bantu Packages</h2>
       {packages.map(packageItem => (
         <div key={packageItem.id} className="package-container">
           <div className="package-info">

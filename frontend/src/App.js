@@ -10,6 +10,8 @@ import User from "./pages/User";
 import Status from "./pages/InvoiceStatus";
 import axios from "./api/axios";
 import PackageRequest from "./pages/PackageRequestForm";
+import PostList from "./pages/PostList";
+import 'bootstrap/dist/css/bootstrap.min.css';
 
 const App = () => {
   const [userRole, setUserRole] = useState('');
@@ -35,7 +37,7 @@ const App = () => {
           <Route path="/" element={<Login setUserRole={setUserRole} />} />
           <Route path="/register" element={<Register />} />
           <Route path="/ticketMonitoring" element={<TicketMonitoring />} />
-          <Route path="/forum" element={<Forum />} />
+          <Route path="/forum" element={<PostList />} />
           <Route path="/@me" element={<User />} />
           <Route path="/invoiceStatus" element={<Status />} />
           <Route path="/packageRequest" element={<PackageRequest />} />

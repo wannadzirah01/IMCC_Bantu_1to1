@@ -1,0 +1,46 @@
+  .post-card {
+    margin-bottom: 20px; 
+    overflow-y: auto; /* Enable vertical scrolling when content exceeds max-height */
+    max-height: 30vh; 
+  }
+
+  .post-list {
+    width: 50rem;
+    align-content: center;
+  }
+  
+  .reply-link {
+    cursor: pointer;
+    display: inline; /* Ensure the "Reply" text is displayed inline */
+  }
+
+  .reply-main-container {
+    margin-top: 20px; 
+  }
+  
+  .each-reply-container {
+    border: 1px solid #ccc; 
+    padding: 10px; 
+  }
+  
+  .reply {
+    margin-bottom: 10px; 
+  }
+  
+  .reply-content {
+    margin-bottom: 5px; 
+  }
+  
+  .reply-info {
+    font-size: 0.8em; 
+    color: #666; 
+  }
+
+  .post-list-container {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px; /* Adjust margin between each post card */
+    margin-left: auto;
+  }
+
+  

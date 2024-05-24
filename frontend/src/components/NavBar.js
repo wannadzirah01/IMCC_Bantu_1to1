@@ -24,8 +24,8 @@ function NavBar({ userRole, setUserRole }) {
       <ul>
         <CustomLink to="/@me">User</CustomLink>
         <CustomLink to="/ticketMonitoring">Bantu Packages</CustomLink>
-        <CustomLink to="/forum">Forum</CustomLink>
         <CustomLink to="/invoiceStatus">Status Monitoring</CustomLink>
+        <CustomLink to="/forum">Forum</CustomLink>
         {userRole ? (
             <div className="button-general">
                 <button onClick={handleLogout}>Logout</button>

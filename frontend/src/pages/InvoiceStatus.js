@@ -141,7 +141,7 @@ const InvoiceStatus = () => {
 
     return userRole ? (
         <div>
-            <h1>Bantu Service Status</h1>
+            <h2>Bantu Service Status</h2>
             <div className="navigation-bar">
                 <button onClick={() => setFilterStatus('All')}>All</button>
                 <button onClick={() => setFilterStatus(['Pending Approval', 'Created', 'Rejected'])}>Pending Approval</button>

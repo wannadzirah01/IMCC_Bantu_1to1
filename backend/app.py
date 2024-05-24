@@ -1,11 +1,11 @@
-from flask import Flask, request, jsonify, session, redirect, url_for, send_from_directory
+from flask import Flask, request, jsonify, session, send_from_directory
 from flask_bcrypt import Bcrypt
 from flask_cors import CORS
 from flask_session import Session
 from werkzeug.utils import secure_filename
 import os
 from config import ApplicationConfig
-from models import db, User, Package, Admin, Client, Invoice, PackageRequest, RequestDetail, PackageDetail, Detail
+from models import db, User, Package, Admin, Client, Invoice, PackageRequest, RequestDetail, PackageDetail, Detail, Post, Reply, Category 
 from flask_login import login_user, LoginManager, login_required, logout_user, current_user
 from datetime import datetime
 from pytz import timezone
@@ -490,6 +490,88 @@ def submit_or_update_package_request():
     db.session.commit()
 
     return jsonify({"message": "Package request updated successfully", "package_request": package_request.request_id}), 201
+
+@app.route('/getPosts', methods=['GET'])
+def get_posts():
+    try:
+        # Query all posts from the database
+        posts = Post.query.all()
+
+        # Serialize the posts to JSON format
+        posts_data = [{
+            'post_id': post.post_id,
+            'title': post.title,
+            'content': post.content,
+            'category': post.category.name,  # Access category name through the relationship
+            'user': post.user.name  # Access user name through the relationship
+            # Add more fields as needed
+        } for post in posts]
+
+        # Return the JSON response
+        return jsonify(posts_data), 200
+    except Exception as e:
+        # Handle any errors and return an appropriate response
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/getCategories', methods=['GET'])
+def get_categories():
+    categories = Category.query.all()
+    categories_list = [{'id': category.category_id, 'name': category.name} for category in categories]
+    return jsonify(categories_list)
+
+@app.route('/createPost', methods=['POST'])
+@login_required
+def create_post():
+    data = request.json
+    title = data.get('title')
+    content = data.get('content')
+    category_id = data.get('category_id')
+
+    user_id = current_user.id
+
+    new_post = Post(title=title, content=content, category_id=category_id, user_id=user_id)
+    db.session.add(new_post)
+    db.session.commit()
+
+    post_data = {
+        'post_id': new_post.post_id,
+        'title': new_post.title,
+        'content': new_post.content,
+        'name': new_post.user.name  # Assuming the user relationship is set up correctly
+        # Add more fields as needed
+    }
+
+    return jsonify(post_data), 201
+    
+@app.route('/createReply', methods=['POST'])
+@login_required
+def create_reply():
+    data = request.json
+    content = data.get('content')
+    post_id = data.get('post_id')
+
+    user_id = current_user.id
+
+    new_reply = Reply(content=content, user_id=user_id, post_id=post_id)
+    db.session.add(new_reply)
+    db.session.commit()
+
+    return jsonify(new_reply.to_dict()), 201
+
+@app.route('/getReplies/<int:post_id>', methods=['GET'])
+def get_replies(post_id):
+    try:
+        # Query replies for the specified post
+        replies = Reply.query.filter_by(post_id=post_id).all()
+
+        # Serialize the replies to JSON format
+        replies_data = [reply.to_dict() for reply in replies]
+
+        # Return the JSON response
+        return jsonify(replies_data), 200
+    except Exception as e:
+        # Handle any errors and return an appropriate response
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == "__main__":
     app.run(debug=True)

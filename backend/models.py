@@ -116,3 +116,63 @@ class RequestDetail(db.Model):
     detail_id = db.Column(db.Integer, db.ForeignKey('detail.detail_id'), nullable=False)
     value = db.Column(db.String(255), nullable=False)
     detail = db.relationship('Detail')
+
+class Category(db.Model):
+    __tablename__ = 'post_category'
+    category_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    name = db.Column(db.String(50), unique=True, nullable=False)
+    posts = db.relationship('Post', backref='category', lazy=True)
+
+class Post(db.Model):
+    post_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    title = db.Column(db.String(100), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.now, nullable=False)
+    category_id = db.Column(db.Integer, db.ForeignKey('post_category.category_id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    replies = db.relationship('Reply', backref='posts', lazy=True)
+    votes = db.relationship('Like', backref='posts', lazy=True)
+    user = db.relationship('User', backref='posts', lazy=True)
+    categories = db.relationship('Category', backref='post', lazy=True)
+
+    def __init__(self, title, content, category_id, user_id):
+        self.title = title
+        self.content = content
+        self.category_id = category_id
+        self.user_id = user_id
+        self.replies = []  # Initialize replies as an empty list
+
+    # # Or if you're fetching posts from the database, ensure that replies are loaded
+    # posts = Post.query.options(db.joinedload('replies')).all()
+
+    def total_likes(self):
+        return Like.query.filter_by(post_id=self.post_id, liked=True).count()
+
+    @staticmethod
+    def get_posts_ordered_by_likes():
+        return Post.query.outerjoin(Like).group_by(Post.post_id).order_by(db.func.count().desc()).all()
+
+class Reply(db.Model):
+    reply_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    content = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.now, nullable=False)
+    post_id = db.Column(db.Integer, db.ForeignKey('post.post_id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    user = db.relationship('User', backref='replies', lazy=True)
+
+    def to_dict(self):
+        return {
+            'reply_id': self.reply_id,
+            'content': self.content,
+            'created_at': self.created_at.isoformat(),
+            'post_id': self.post_id,
+            'user_id': self.user_id,
+            'user_name': self.user.name  # Assuming the user relationship is set up correctly
+        }
+
+
+class Like(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    post_id = db.Column(db.Integer, db.ForeignKey('post.post_id'), nullable=False, unique=True)
+    liked = db.Column(db.Boolean, nullable=False, default=True)
