@@ -5,7 +5,7 @@ from flask_session import Session
 from werkzeug.utils import secure_filename
 import os
 from config import ApplicationConfig
-from models import db, User, Package, Admin, Client, Invoice, PackageRequest, RequestDetail, PackageDetail, Detail, Post, Reply, Category 
+from models import db, User, Package, Admin, Client, Invoice, PackageRequest, RequestDetail, PackageDetail, Detail, Post, Reply, Category, Complaint
 from flask_login import login_user, LoginManager, login_required, logout_user, current_user
 from datetime import datetime
 from pytz import timezone
@@ -28,6 +28,7 @@ with app.app_context():
 login_manager = LoginManager()
 login_manager.init_app(app)
 
+
 def admin_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -38,9 +39,11 @@ def admin_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+
 @login_manager.user_loader
 def load_user(user_id):
-	return User.query.get(user_id)
+    return User.query.get(user_id)
+
 
 @app.route('/register', methods=['POST'])
 def register_user():
@@ -49,11 +52,11 @@ def register_user():
         email = data["email"]
         password = data["password"]
         name = data["name"]
-        matric_number = data.get("matricNumber")  
+        matric_number = data.get("matricNumber")
         phone_number = data["phoneNumber"]
         school = data["school"]
         year_of_study = data["yearOfStudy"]
-        
+
         if email.endswith("@usm.my"):
             role = "admin"
         else:
@@ -61,24 +64,25 @@ def register_user():
 
         if User.query.filter_by(email=email).first():
             return jsonify({"error": "User already exists"}), 400
-        
-        hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
+
+        hashed_password = bcrypt.generate_password_hash(
+            password).decode('utf-8')
 
         if role == "admin":
             new_user = Admin(
-                email=email, 
-                password=hashed_password, 
-                name=name, 
+                email=email,
+                password=hashed_password,
+                name=name,
                 phone_number=phone_number
             )
         else:
             new_user = Client(
-                email=email, 
-                password=hashed_password, 
-                name=name, 
-                matric_number=matric_number, 
-                phone_number=phone_number, 
-                school=school, 
+                email=email,
+                password=hashed_password,
+                name=name,
+                matric_number=matric_number,
+                phone_number=phone_number,
+                school=school,
                 year_of_study=year_of_study
             )
 
@@ -91,16 +95,17 @@ def register_user():
             "id": new_user.id,
             "email": new_user.email,
             "name": new_user.name,
-            "matric_number": getattr(new_user, 'matric_number', None),  
+            "matric_number": getattr(new_user, 'matric_number', None),
             "phone_number": new_user.phone_number,
-            "school": getattr(new_user, 'school', None),  
-            "year_of_study": getattr(new_user, 'year_of_study', None),  
-            "role": role  
+            "school": getattr(new_user, 'school', None),
+            "year_of_study": getattr(new_user, 'year_of_study', None),
+            "role": role
         })
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": str(e)}), 500
-    
+
+
 @app.route('/login', methods=['POST'])
 def login_user_route():
     try:
@@ -122,6 +127,7 @@ def login_user_route():
         })
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 
 @app.route('/@me')
 @login_required
@@ -147,18 +153,21 @@ def get_current_user():
     else:
         return jsonify({"error": "Unknown user type"}), 400
 
+
 @app.route('/getUserRole', methods=['GET'])
 @login_required
 def get_user_role():
     user = current_user
-    user_role = user.discriminator  
+    user_role = user.discriminator
     return jsonify({"role": user_role})
+
 
 @app.route("/logout", methods=["POST"])
 @login_required
 def logout_user_route():
     logout_user()
     return jsonify({"message": "Logged out successfully"}), 200
+
 
 @app.route('/packageListing', methods=['GET'])
 @login_required
@@ -170,10 +179,11 @@ def get_package_listing():
         "title": package.title,
         "description": package.description,
         "price": package.price,
-        "user_id": user.id,  
+        "user_id": user.id,
     } for package in packages]
 
     return jsonify(package_list)
+
 
 @app.route('/uploadInvoice', methods=['POST'])
 @login_required
@@ -192,36 +202,30 @@ def upload_invoice():
         file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(file_path)
 
-        invoice_id = request.form.get('invoice_id')  
+        malaysia_timezone = pytz.timezone('Asia/Kuala_Lumpur')
+        current_time_malaysia = datetime.now(malaysia_timezone)
+
+        invoice_id = request.form.get('invoice_id')
 
         if invoice_id:
             existing_invoice = Invoice.query.get(invoice_id)
             if not existing_invoice:
                 return jsonify({'error': 'Invoice not found'}), 404
+            
+            existing_package_request = PackageRequest.query.filter_by(invoice_id=invoice_id).first()
 
             existing_invoice.file_name = filename
             existing_invoice.file_path = file_path
             existing_invoice.file_size = os.path.getsize(file_path)
-            existing_invoice.invoice_status = "Pending Payment"
+            existing_invoice.invoice_status = "Pending Receipt Approval"
             existing_invoice.remarks = ""
-            
+            existing_package_request.status = "Pending Receipt Approval"
+
             db.session.commit()
 
             return jsonify({'success': True, 'message': 'File re-uploaded successfully', 'file_name': filename}), 200
         else:
             package_id = request.form.get('package_id')
-
-            malaysia_timezone = pytz.timezone('Asia/Kuala_Lumpur')
-            current_time_malaysia = datetime.now(malaysia_timezone)
-
-            new_package_request = PackageRequest(
-                package_id=package_id,
-                user_id=user.id,
-                submitted_at=current_time_malaysia,
-                status="Created"
-            )
-            db.session.add(new_package_request)
-            db.session.commit()
 
             new_invoice = Invoice(
                 file_name=filename,
@@ -229,71 +233,93 @@ def upload_invoice():
                 file_size=os.path.getsize(file_path),
                 user_id=user.id,
                 package_id=package_id,
-                package_request_id=new_package_request.request_id,
-                invoice_status="Pending Payment",
+                invoice_status="Pending Receipt Approval",
                 remarks=""
             )
             db.session.add(new_invoice)
+            db.session.commit()
+
+            invoice_id = new_invoice.invoice_id
+
+            # Create the PackageRequest record with the retrieved invoice_id
+            new_package_request = PackageRequest(
+                package_id=package_id,
+                user_id=user.id,
+                submitted_at=current_time_malaysia,
+                status="Pending Receipt Approval",
+                mentor_name="",
+                mentor_email="",
+                invoice_id=invoice_id  # Set the invoice_id here
+            )
+            db.session.add(new_package_request)
             db.session.commit()
 
             return jsonify({'success': True, 'message': 'File uploaded successfully', 'file_name': filename}), 201
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@app.route('/getInvoiceStatus', methods=['GET'])
+@app.route('/getUserTickets', methods=['GET'])
 @login_required
-def get_invoice_status():
+def get_user_tickets():
     user = current_user
     user_id = user.id
-    if not user_id: 
+    if not user_id:
         return jsonify({"error": "Unauthorized"}), 401
-    
-    invoices = Invoice.query.filter_by(user_id=user_id).order_by(Invoice.uploaded_datetime.desc()).all()
-    if not invoices:
-        return jsonify({"message": "No uploaded invoices"}), 200
 
-    invoice_list = []
-    for invoice in invoices:
-        malaysia_time = invoice.uploaded_datetime.astimezone(timezone('Asia/Kuala_Lumpur'))
-        invoice_list.append({
-            "invoice_status": invoice.invoice_status,
-            "package": invoice.package.title,
-            "uploaded_datetime": malaysia_time.strftime('%Y-%m-%d %H:%M:%S'),
-            "file_name": invoice.file_name,
-            "user_name": invoice.user.name,
-            "remarks": invoice.remarks,
-            "invoice_id": invoice.invoice_id,
-            "package_request_id": invoice.package_request_id,
-            "package_request_status": invoice.package_request.status if invoice.package_request else None  
+    tickets = PackageRequest.query.filter_by(user_id=user_id).order_by(
+        PackageRequest.submitted_at.desc()).all()
+    if not tickets:
+        return jsonify({"message": "No ticket"}), 200
+
+    ticket_list = []
+    for ticket in tickets:
+        malaysia_time = ticket.submitted_at.astimezone(
+            timezone('Asia/Kuala_Lumpur'))
+        ticket_list.append({
+            "invoice_status": ticket.invoice.invoice_status,
+            "package": ticket.package.title,
+            "ticket_datetime": malaysia_time.strftime('%Y-%m-%d %H:%M:%S'),
+            "file_name": ticket.invoice.file_name,
+            "user_name": ticket.user.name,
+            "email": ticket.user.email,
+            "remarks": ticket.invoice.remarks,
+            "invoice_id": ticket.invoice.invoice_id,
+            "package_request_status": ticket.status,
+            "package_request_id": ticket.request_id
         })
 
-    return jsonify(invoice_list)
+    return jsonify(ticket_list)
 
-@app.route('/getAllInvoiceStatus', methods=['GET'])
+
+@app.route('/getAllTickets', methods=['GET'])
 @login_required
 @admin_required
-def get_all_invoice_status():
-    invoices = Invoice.query.order_by(Invoice.uploaded_datetime.desc()).all()
-    if not invoices:
-        return jsonify({"message": "No uploaded invoices"}), 200
+def get_all_tickets():
+    tickets = PackageRequest.query.order_by(
+        PackageRequest.submitted_at.desc()).all()
+    if not tickets:
+        return jsonify({"message": "No tickets"}), 200
 
-    invoice_list = []
-    for invoice in invoices:
-        malaysia_time = invoice.uploaded_datetime.astimezone(timezone('Asia/Kuala_Lumpur'))
-        invoice_list.append({
-            "invoice_status": invoice.invoice_status,
-            "package": invoice.package.title,
-            "user_name": invoice.user.name,
+    ticket_list = []
+    for ticket in tickets:
+        malaysia_time = ticket.submitted_at.astimezone(
+            timezone('Asia/Kuala_Lumpur'))
+        ticket_list.append({
+            "invoice_status": ticket.invoice.invoice_status,
+            "package": ticket.package.title,
+            "user_name": ticket.user.name,
             "uploaded_datetime": malaysia_time.strftime('%Y-%m-%d %H:%M:%S'),
-            "file_name": invoice.file_name,
-            "matric_number": invoice.user.matric_number,
-            "invoice_id": invoice.invoice_id,
-            "remarks": invoice.remarks,
-            "package_request_id": invoice.package_request_id,
-            "package_request_status": invoice.package_request.status if invoice.package_request else None
+            "file_name": ticket.invoice.file_name,
+            "matric_number": ticket.user.matric_number,
+            "email": ticket.user.email,
+            "invoice_id": ticket.invoice.invoice_id,
+            "remarks": ticket.invoice.remarks,
+            "package_request_status": ticket.status,
+            "package_request_id": ticket.request_id
         })
 
-    return jsonify(invoice_list)
+    return jsonify(ticket_list)
+
 
 @app.route('/viewInvoiceFile/<filename>', methods=['GET'])
 @login_required
@@ -303,43 +329,53 @@ def view_invoice_file(filename):
         return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
     except FileNotFoundError:
         return jsonify({"error": "File not found"}), 404
-    
+
+
 @app.route('/updateInvoiceStatus', methods=['POST'])
 @login_required
 @admin_required
 def update_invoice_status():
     data = request.json
-    invoice_id = data.get('invoice_id')
+    ticket_id = data.get('ticket_id')
     new_status = data.get('invoice_status')
 
-    invoice = Invoice.query.get(invoice_id)
-    if not invoice:
-        return jsonify({"error": "Invoice not found"}), 404
+    ticket = PackageRequest.query.get(ticket_id)
+    if not ticket:
+        return jsonify({"error": "Ticket not found"}), 404
 
-    invoice.invoice_status = new_status
+    # Check if the ticket has an associated invoice
+    if not ticket.invoice:
+        return jsonify({"error": "Invoice not found for the given ticket"}), 404
 
-    if new_status == 'Payment Rejected':
+    ticket.invoice.invoice_status = new_status
+    ticket.status = new_status
+
+    if new_status == 'Receipt Rejected':
         remarks = data.get('remarks')
-        invoice.remarks = remarks
+        ticket.invoice.remarks = remarks
     else:
-        invoice.remarks = None
+        ticket.invoice.remarks = None
 
     db.session.commit()
 
     return jsonify({"message": "Invoice status updated successfully"}), 200
 
+
 @app.route('/getPackageDetails/<int:invoice_id>', methods=['GET'])
 @login_required
 def get_package_details(invoice_id):
     invoice = Invoice.query.get_or_404(invoice_id)
-    if invoice.invoice_status != "Payment Received":
+    if invoice.invoice_status != "Receipt Approved":
         return jsonify({"error": "Invoice is not approved"}), 403
 
     package = Package.query.get_or_404(invoice.package_id)
-    package_details = PackageDetail.query.filter_by(package_id=package.id).all()
-    details = [{"detail_name": pd.detail.detail_name, "detail_type": pd.detail.detail_type} for pd in package_details]
+    package_details = PackageDetail.query.filter_by(
+        package_id=package.id).all()
+    details = [{"detail_name": pd.detail.detail_name,
+                "detail_type": pd.detail.detail_type} for pd in package_details]
 
     return jsonify({"package_details": details})
+
 
 @app.route('/submitPackageRequest', methods=['POST'])
 @login_required
@@ -348,14 +384,15 @@ def submit_package_request():
     package_request_id = data.get('package_request_id')
     details = data.get('details', [])
 
-    package_request = PackageRequest.query.filter_by(request_id=package_request_id).first()
+    package_request = PackageRequest.query.filter_by(
+        invoice_id=package_request_id).first()
     if not package_request:
         return jsonify({"error": "Package request not found"}), 404
 
-    if package_request.status == 'Pending Approval':
+    if package_request.status == 'Pending Package Details Approval':
         return jsonify({"error": "Package request has already been submitted"}), 400
 
-    package_request.status = 'Pending Approval'
+    package_request.status = 'Pending Package Details Approval'
     db.session.add(package_request)
     db.session.commit()
 
@@ -374,13 +411,25 @@ def submit_package_request():
     db.session.commit()
     return jsonify({"message": "Package request submitted successfully", "package_request": package_request.request_id}), 201
 
+
 @app.route('/getPackageRequest/<int:request_id>', methods=['GET'])
 @login_required
 def get_package_request(request_id):
-    package_request = PackageRequest.query.filter_by(request_id=request_id).first()
+    userRole = current_user.discriminator
+    package_request = PackageRequest.query.filter_by(
+        request_id=request_id).first()
+
     if not package_request:
         return jsonify({"error": "Package request not found"}), 404
-    
+
+    if userRole == "client":
+        mentor_name = package_request.mentor_name if package_request.mentor_name else "Not assigned yet. Please check again later."
+        mentor_email = package_request.mentor_email if package_request.mentor_email else "Not assigned yet. Please check again later."
+
+    if userRole == "admin":
+        mentor_name = package_request.mentor_name if package_request.mentor_name else "Not assigned yet."
+        mentor_email = package_request.mentor_email if package_request.mentor_email else "Not assigned yet."
+
     details = [
         {
             "detail_name": detail.detail.detail_name,
@@ -393,28 +442,40 @@ def get_package_request(request_id):
         "package_id": package_request.package_id,
         "submitted_at": package_request.submitted_at,
         "status": package_request.status,
-        "details": details
+        "details": details,
+        "mentor_name": mentor_name,
+        "mentor_email": mentor_email
     }
-    
+
     return jsonify(response), 200
+
 
 @app.route('/getUserPackageRequests', methods=['GET'])
 @login_required
 def get_user_package_requests():
     user_id = current_user.id
     package_requests = PackageRequest.query.filter_by(user_id=user_id).all()
+
     result = []
-    for request in package_requests:
-        details = RequestDetail.query.filter_by(request_id=request.request_id).all()
-        detail_list = [{"detail_name": detail.detail.detail_name, "value": detail.value} for detail in details]
+    for package_request in package_requests:
+        mentor_name = package_request.mentor_name if package_request.mentor_name else "Not assigned yet. Please check again later."
+        mentor_email = package_request.mentor_email if package_request.mentor_email else "Not assigned yet. Please check again later."
+
+        details = RequestDetail.query.filter_by(
+            request_id=package_request.request_id).all()
+        detail_list = [{"detail_name": detail.detail.detail_name,
+                        "value": detail.value} for detail in details]
         result.append({
-            "request_id": request.request_id,
-            "package_name": request.package.title,
-            "submitted_at": request.submitted_at,
-            "status": request.status,
-            "details": detail_list
+            "request_id": package_request.request_id,
+            "package_name": package_request.package.title,
+            "submitted_at": package_request.submitted_at,
+            "status": package_request.status,
+            "details": detail_list,
+            "mentor_name": mentor_name,
+            "mentor_email": mentor_email
         })
     return jsonify(result)
+
 
 @app.route('/getAllPackageRequests', methods=['GET'])
 @login_required
@@ -422,22 +483,29 @@ def get_user_package_requests():
 def get_all_package_requests():
     package_requests = PackageRequest.query.all()
     result = []
-    for request in package_requests:
-        details = RequestDetail.query.filter_by(request_id=request.request_id).all()
-        detail_list = [{"detail_name": detail.detail.detail_name, "value": detail.value} for detail in details]
+    for package_request in package_requests:
+        mentor_name = package_request.mentor_name if package_request.mentor_name else "Not assigned yet. Please check again later."
+        mentor_email = package_request.mentor_email if package_request.mentor_email else "Not assigned yet. Please check again later."
+
+        details = RequestDetail.query.filter_by(
+            request_id=package_request.request_id).all()
+        detail_list = [{"detail_name": detail.detail.detail_name,
+                        "value": detail.value} for detail in details]
         result.append({
-            "request_id": request.request_id,
-            "package_name": request.package.title,
-            "user_name": request.user.name,
-            "submitted_at": request.submitted_at,
-            "status": request.status,
-            "details": detail_list
+            "request_id": package_request.request_id,
+            "package_name": package_request.package.title,
+            "submitted_at": package_request.submitted_at,
+            "status": package_request.status,
+            "details": detail_list,
+            "mentor_name": mentor_name,
+            "mentor_email": mentor_email
         })
     return jsonify(result)
 
+
 @app.route('/updatePackageRequestStatus', methods=['POST'])
 @login_required
-@admin_required  
+# @admin_required
 def update_package_request_status():
     data = request.get_json()
     request_id = data.get('request_id')
@@ -447,23 +515,25 @@ def update_package_request_status():
     if not package_request:
         return jsonify({"message": "Package request not found"}), 404
 
-    if package_request.status != 'Pending Approval':
-        return jsonify({"message": "Only 'Pending Approval' package requests can be updated by admin"}), 400
+    # if package_request.status != 'Pending Package Details Approval':
+    #     return jsonify({"message": "Only 'Pending Package Details Approval' package requests can be updated by admin"}), 400
 
     package_request.status = new_status
     db.session.commit()
 
     return jsonify({"message": "Package request status updated successfully"}), 200
 
+
 @app.route('/submitOrUpdatePackageRequest', methods=['POST'])
 @login_required
 def submit_or_update_package_request():
     data = request.get_json()
     package_request_id = data.get('package_request_id')
-    new_status = data.get('status', 'Pending Approval')  
+    new_status = data.get('status', 'Pending Approval')
     details = data.get('details', [])
 
-    package_request = PackageRequest.query.filter_by(request_id=package_request_id).first()
+    package_request = PackageRequest.query.filter_by(
+        request_id=package_request_id).first()
     if not package_request:
         return jsonify({"error": "Package request not found"}), 404
 
@@ -471,7 +541,7 @@ def submit_or_update_package_request():
     db.session.add(package_request)
     db.session.commit()
 
-    if new_status == 'Rejected' and details:
+    if new_status == 'Package Details Rejected' and details:
         RequestDetail.query.filter_by(request_id=package_request_id).delete()
         db.session.commit()
 
@@ -491,33 +561,144 @@ def submit_or_update_package_request():
 
     return jsonify({"message": "Package request updated successfully", "package_request": package_request.request_id}), 201
 
+
+@app.route('/addMentorDetails', methods=['POST'])
+@login_required
+@admin_required
+def add_mentor_details():
+    data = request.get_json()
+    package_request_id = data.get('packageRequestId')
+    mentor_name = data.get('mentorName')
+    mentor_email = data.get('mentorEmail')
+
+    package_request = PackageRequest.query.filter_by(
+        request_id=package_request_id).first()
+    if not package_request:
+        return jsonify({"error": "Package request not found"}), 404
+
+    # Update the existing package request with mentor details
+    package_request.mentor_name = mentor_name
+    package_request.mentor_email = mentor_email
+
+    db.session.commit()
+
+    mentor_data = {
+        'mentor_name': package_request.mentor_name,
+        'mentor_email': package_request.mentor_email
+    }
+
+    return jsonify(mentor_data), 200
+
+
+@app.route('/getComplaints', methods=['GET'])
+@login_required
+@admin_required
+def get_complaints():
+    try:
+        complaints = Complaint.query.all()
+
+        complaints = [{
+            'complaint_id': complaint.complaint_id,
+            "request_id": complaint.request_id,
+            'complaint_details': complaint.complaint_detail,
+            'complaint_status': complaint.complaint_status,
+            'complaint_created': complaint.complaint_created
+        } for complaint in complaints]
+
+        return jsonify(complaints), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/getUserComplaints', methods=['GET'])
+@login_required
+def get_user_complaints():
+    try:
+        user = current_user
+        user_id = user.id
+
+        complaints = (db.session.query(Complaint)
+                      .join(PackageRequest, Complaint.request_id == PackageRequest.request_id)
+                      .filter(PackageRequest.user_id == user_id)
+                      .all())
+
+        complaints = [{
+            'complaint_id': complaint.complaint_id,
+            "request_id": complaint.request_id,
+            'complaint_details': complaint.complaint_detail,
+            'complaint_status': complaint.complaint_status,
+            'complaint_created': complaint.complaint_created
+        } for complaint in complaints]
+
+        return jsonify(complaints), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/addComplaints', methods=['POST'])
+@login_required
+def add_complaints():
+    data = request.get_json()
+    package_request_id = data.get('packageRequestId')
+    complaint_details = data.get('complaintDetails')
+
+    package_request = PackageRequest.query.filter_by(
+        request_id=package_request_id).first()
+    if not package_request:
+        return jsonify({"error": "Package request not found"}), 404
+
+    package_request.has_complaint = True
+    db.session.commit()
+
+    malaysia_timezone = pytz.timezone('Asia/Kuala_Lumpur')
+    current_time_malaysia = datetime.now(malaysia_timezone)
+
+    new_complaint = Complaint(
+        request_id=package_request_id,
+        complaint_detail=complaint_details,
+        complaint_created=current_time_malaysia,
+        complaint_status="In Progress"
+    )
+
+    db.session.add(new_complaint)
+    db.session.commit()
+
+    complaint_data = {
+        'complaint_id': new_complaint.complaint_id,
+        'request_id': new_complaint.request_id,
+        "complaint_details": new_complaint.complaint_detail,
+        "complaint_status": new_complaint.complaint_status,
+        "complaint_created": new_complaint.complaint_created
+    }
+
+    return jsonify(complaint_data), 200
+
+
 @app.route('/getPosts', methods=['GET'])
 def get_posts():
     try:
-        # Query all posts from the database
         posts = Post.query.all()
 
-        # Serialize the posts to JSON format
         posts_data = [{
             'post_id': post.post_id,
             'title': post.title,
             'content': post.content,
-            'category': post.category.name,  # Access category name through the relationship
-            'user': post.user.name  # Access user name through the relationship
-            # Add more fields as needed
+            'category': post.category.name,
+            'user': post.user.name
         } for post in posts]
 
-        # Return the JSON response
         return jsonify(posts_data), 200
     except Exception as e:
-        # Handle any errors and return an appropriate response
         return jsonify({'error': str(e)}), 500
+
 
 @app.route('/getCategories', methods=['GET'])
 def get_categories():
     categories = Category.query.all()
-    categories_list = [{'id': category.category_id, 'name': category.name} for category in categories]
+    categories_list = [{'id': category.category_id,
+                        'name': category.name} for category in categories]
     return jsonify(categories_list)
+
 
 @app.route('/createPost', methods=['POST'])
 @login_required
@@ -529,7 +710,8 @@ def create_post():
 
     user_id = current_user.id
 
-    new_post = Post(title=title, content=content, category_id=category_id, user_id=user_id)
+    new_post = Post(title=title, content=content,
+                    category_id=category_id, user_id=user_id)
     db.session.add(new_post)
     db.session.commit()
 
@@ -537,12 +719,11 @@ def create_post():
         'post_id': new_post.post_id,
         'title': new_post.title,
         'content': new_post.content,
-        'name': new_post.user.name  # Assuming the user relationship is set up correctly
-        # Add more fields as needed
+        'name': new_post.user.name
     }
 
     return jsonify(post_data), 201
-    
+
 @app.route('/createReply', methods=['POST'])
 @login_required
 def create_reply():
@@ -558,19 +739,16 @@ def create_reply():
 
     return jsonify(new_reply.to_dict()), 201
 
+
 @app.route('/getReplies/<int:post_id>', methods=['GET'])
 def get_replies(post_id):
     try:
-        # Query replies for the specified post
         replies = Reply.query.filter_by(post_id=post_id).all()
 
-        # Serialize the replies to JSON format
         replies_data = [reply.to_dict() for reply in replies]
 
-        # Return the JSON response
         return jsonify(replies_data), 200
     except Exception as e:
-        # Handle any errors and return an appropriate response
         return jsonify({'error': str(e)}), 500
 
 if __name__ == "__main__":

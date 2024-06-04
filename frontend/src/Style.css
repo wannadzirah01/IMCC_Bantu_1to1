@@ -17,12 +17,11 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: stretch;
-    gap: 2rem;
     padding: 0 1rem;
 }
 
 .site-title{
-    font-size: auto;
+    font-size: 25px;
 }
 
 .nav ul {
@@ -65,4 +64,14 @@ body {
     width: 98%;
     margin: 0 auto;
     text-align: center;
+}
+
+.button-general-logout button {
+    float: right;
+    background-color: #f68b1e;
+    color: #fff;
+    border: none;
+    padding: 10px 10px;
+    cursor: pointer;
+    border-radius: 5px;
 }

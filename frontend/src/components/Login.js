@@ -14,12 +14,15 @@ const Login = ({ setUserRole }) => {
       const response = await axios.post("http://localhost:5000/login", { email, password }, { withCredentials: true });
       alert("Successful user login");
 
-      // Fetch the user role to update the NavBar
       const userRoleResponse = await axios.get('http://localhost:5000/getUserRole', { withCredentials: true });
       setUserRole(userRoleResponse.data.role);
 
-      // Redirect to the ticket monitoring page
-      navigate("/ticketMonitoring");
+      if (userRoleResponse.data.role === "client") {
+        navigate("/packageListing");
+      } else if (userRoleResponse.data.role === "admin") {
+        navigate("/ticketManagement");
+      }
+      
     } catch (err) {
       if (err.response && err.response.status === 401) {
         alert("Invalid Credentials");

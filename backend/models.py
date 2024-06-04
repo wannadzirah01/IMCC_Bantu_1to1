@@ -68,8 +68,6 @@ class Invoice(db.Model):
     invoice_status = db.Column(db.String(32), default="Pending Approval")
     uploaded_datetime = db.Column(db.DateTime, default=lambda: datetime.now(malaysia_timezone))
     remarks = db.Column(db.String(255))
-    package_request_id = db.Column(db.Integer, db.ForeignKey('package_request.request_id'))  
-    package_request = db.relationship('PackageRequest', backref=db.backref('invoices', lazy=True))  
 
     def __init__(self, file_name, file_path, file_size, user_id, package_id, package_request_id=None, invoice_status="Pending", remarks=None, uploaded_datetime=None):
         self.file_name = file_name
@@ -108,6 +106,11 @@ class PackageRequest(db.Model):
     submitted_at = db.Column(db.DateTime, default=lambda: datetime.now(malaysia_timezone))
     details = db.relationship('RequestDetail', backref='package_requests', lazy=True)
     status = db.Column(db.String(32), default="Pending Approval")
+    mentor_name = db.Column(db.String(255))
+    mentor_email = db.Column(db.String(255))
+    has_complaint = db.Column(db.Boolean, default=False)
+    invoice_id = db.Column(db.Integer, db.ForeignKey('invoice.invoice_id'))  
+    invoice = db.relationship('Invoice', backref=db.backref('package_requests', lazy=True))  
 
 class RequestDetail(db.Model):
     __tablename__ = 'request_detail'
@@ -116,6 +119,14 @@ class RequestDetail(db.Model):
     detail_id = db.Column(db.Integer, db.ForeignKey('detail.detail_id'), nullable=False)
     value = db.Column(db.String(255), nullable=False)
     detail = db.relationship('Detail')
+
+class Complaint(db.Model):
+    __tablename__ = "complaint"
+    complaint_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    request_id = db.Column(db.Integer, db.ForeignKey('package_request.request_id'), nullable=False)
+    complaint_detail = db.Column(db.String(255), nullable=False)
+    complaint_status = db.Column(db.String(255), nullable=False)
+    complaint_created = db.Column(db.DateTime, default=lambda: datetime.now(malaysia_timezone))
 
 class Category(db.Model):
     __tablename__ = 'post_category'
@@ -167,9 +178,8 @@ class Reply(db.Model):
             'created_at': self.created_at.isoformat(),
             'post_id': self.post_id,
             'user_id': self.user_id,
-            'user_name': self.user.name  # Assuming the user relationship is set up correctly
+            'user_name': self.user.name 
         }
-
 
 class Like(db.Model):
     id = db.Column(db.Integer, primary_key=True)

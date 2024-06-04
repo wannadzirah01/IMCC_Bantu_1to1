@@ -52,10 +52,11 @@ button {
   border: 1px solid #000000;
   background-color: #ffffff;
   padding: 10px;
-  margin-bottom: 10px;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  width: 65%;
+  margin:auto
 }
 
 .package-info {
@@ -79,6 +80,13 @@ button {
   border-radius: 5px;
 }
 
+.package-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between; /* Pushes the button to the right */
+}
+
+
 .button-general button {
   background-color: #f68b1e;
   color: #fff;
@@ -87,6 +95,7 @@ button {
   cursor: pointer;
   border-radius: 5px;
 }
+
 
 .button-general button:hover {
   background-color: #d96e03;
@@ -205,4 +214,10 @@ button {
   max-width: 600px;
   margin: 0 auto;
   padding: 20px;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
 }

@@ -23,11 +23,15 @@ function NavBar({ userRole, setUserRole }) {
       </Link>
       <ul>
         <CustomLink to="/@me">User</CustomLink>
-        <CustomLink to="/ticketMonitoring">Bantu Packages</CustomLink>
-        <CustomLink to="/invoiceStatus">Status Monitoring</CustomLink>
+        {userRole == "client" && (
+          <CustomLink to="/packageListing">Bantu Packages</CustomLink>
+        )}
+        <CustomLink to="/ticketManagement">Service Status</CustomLink>
+        {/* <CustomLink to="/complaintStatus">Complaint Status</CustomLink> */}
+        <CustomLink to="/dashboard">Dashboard</CustomLink>
         <CustomLink to="/forum">Forum</CustomLink>
         {userRole ? (
-            <div className="button-general">
+            <div className="button-general-logout">
                 <button onClick={handleLogout}>Logout</button>
             </div>
         ) : (
