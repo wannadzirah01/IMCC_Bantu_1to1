@@ -100,7 +100,7 @@ function PackageList() {
                             onChange={(event) =>
                                 handleFileChange(packageItem.id, event)
                             }
-                            accept="image/*,application/pdf"
+                            accept="application/pdf"
                         />
                         <button onClick={() => handleUpload(packageItem.id)}>
                             Upload Receipt

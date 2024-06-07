@@ -1,17 +1,20 @@
-from flask import Flask, request, jsonify, session, send_from_directory
+from urllib import response
+from flask_mail import Mail, Message
+from flask import Flask, request, jsonify, session, send_from_directory, render_template, make_response, current_app, Response
 from flask_bcrypt import Bcrypt
 from flask_cors import CORS
 from flask_session import Session
 from werkzeug.utils import secure_filename
 import os
 from config import ApplicationConfig
-from models import db, User, Package, Admin, Client, Invoice, PackageRequest, RequestDetail, PackageDetail, Detail, Post, Reply, Category, Complaint
+from models import db, User, Package, Admin, Client, Invoice, PackageRequest, RequestDetail, PackageDetail, Detail, Post, Reply, Category, Complaint, Like
 from flask_login import login_user, LoginManager, login_required, logout_user, current_user
 from datetime import datetime
 from pytz import timezone
 from functools import wraps
 from flask import request, jsonify
 import pytz
+import plotly.graph_objs as go
 
 app = Flask(__name__)
 app.config.from_object(ApplicationConfig)
@@ -52,10 +55,10 @@ def register_user():
         email = data["email"]
         password = data["password"]
         name = data["name"]
-        matric_number = data.get("matricNumber")
+        # matric_number = data.get("matricNumber")
         phone_number = data["phoneNumber"]
-        school = data["school"]
-        year_of_study = data["yearOfStudy"]
+        # school = data["school"]
+        # year_of_study = data["yearOfStudy"]
 
         if email.endswith("@usm.my"):
             role = "admin"
@@ -80,10 +83,10 @@ def register_user():
                 email=email,
                 password=hashed_password,
                 name=name,
-                matric_number=matric_number,
+                # matric_number=matric_number,
                 phone_number=phone_number,
-                school=school,
-                year_of_study=year_of_study
+                # school=school,
+                # year_of_study=year_of_study
             )
 
         db.session.add(new_user)
@@ -95,10 +98,10 @@ def register_user():
             "id": new_user.id,
             "email": new_user.email,
             "name": new_user.name,
-            "matric_number": getattr(new_user, 'matric_number', None),
+            # "matric_number": getattr(new_user, 'matric_number', None),
             "phone_number": new_user.phone_number,
-            "school": getattr(new_user, 'school', None),
-            "year_of_study": getattr(new_user, 'year_of_study', None),
+            # "school": getattr(new_user, 'school', None),
+            # "year_of_study": getattr(new_user, 'year_of_study', None),
             "role": role
         })
     except Exception as e:
@@ -145,10 +148,10 @@ def get_current_user():
             "id": user.id,
             "email": user.email,
             "name": user.name,
-            "matric_number": user.matric_number,
+            # "matric_number": user.matric_number,
             "phone_number": user.phone_number,
-            "school": user.school,
-            "year_of_study": user.year_of_study
+            # "school": user.school,
+            # "year_of_study": user.year_of_study
         })
     else:
         return jsonify({"error": "Unknown user type"}), 400
@@ -211,8 +214,9 @@ def upload_invoice():
             existing_invoice = Invoice.query.get(invoice_id)
             if not existing_invoice:
                 return jsonify({'error': 'Invoice not found'}), 404
-            
-            existing_package_request = PackageRequest.query.filter_by(invoice_id=invoice_id).first()
+
+            existing_package_request = PackageRequest.query.filter_by(
+                invoice_id=invoice_id).first()
 
             existing_invoice.file_name = filename
             existing_invoice.file_path = file_path
@@ -249,7 +253,7 @@ def upload_invoice():
                 status="Pending Receipt Approval",
                 mentor_name="",
                 mentor_email="",
-                invoice_id=invoice_id  # Set the invoice_id here
+                invoice_id=invoice_id
             )
             db.session.add(new_package_request)
             db.session.commit()
@@ -257,6 +261,7 @@ def upload_invoice():
             return jsonify({'success': True, 'message': 'File uploaded successfully', 'file_name': filename}), 201
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
 
 @app.route('/getUserTickets', methods=['GET'])
 @login_required
@@ -275,6 +280,10 @@ def get_user_tickets():
     for ticket in tickets:
         malaysia_time = ticket.submitted_at.astimezone(
             timezone('Asia/Kuala_Lumpur'))
+        
+        # Fetch details for the current ticket
+        details = RequestDetail.query.filter_by(request_id=ticket.request_id).all()
+
         ticket_list.append({
             "invoice_status": ticket.invoice.invoice_status,
             "package": ticket.package.title,
@@ -285,7 +294,8 @@ def get_user_tickets():
             "remarks": ticket.invoice.remarks,
             "invoice_id": ticket.invoice.invoice_id,
             "package_request_status": ticket.status,
-            "package_request_id": ticket.request_id
+            "package_request_id": ticket.request_id,
+            "details": [{"detail_name": detail.detail.detail_name, "detail_type": detail.detail.detail_type, "value": detail.value} for detail in details]
         })
 
     return jsonify(ticket_list)
@@ -295,8 +305,13 @@ def get_user_tickets():
 @login_required
 @admin_required
 def get_all_tickets():
+    page = int(request.args.get('page', 1))
+    limit = int(request.args.get('limit', 10))
+    offset = (page - 1) * limit
+
     tickets = PackageRequest.query.order_by(
-        PackageRequest.submitted_at.desc()).all()
+        PackageRequest.submitted_at.desc()).offset(offset).limit(limit).all()
+    total_tickets = PackageRequest.query.count()
     if not tickets:
         return jsonify({"message": "No tickets"}), 200
 
@@ -304,21 +319,26 @@ def get_all_tickets():
     for ticket in tickets:
         malaysia_time = ticket.submitted_at.astimezone(
             timezone('Asia/Kuala_Lumpur'))
+        
+        # Fetch details for the current ticket
+        details = RequestDetail.query.filter_by(request_id=ticket.request_id).all()
+
         ticket_list.append({
             "invoice_status": ticket.invoice.invoice_status,
             "package": ticket.package.title,
             "user_name": ticket.user.name,
             "uploaded_datetime": malaysia_time.strftime('%Y-%m-%d %H:%M:%S'),
             "file_name": ticket.invoice.file_name,
-            "matric_number": ticket.user.matric_number,
+            # "matric_number": ticket.user.matric_number,
             "email": ticket.user.email,
             "invoice_id": ticket.invoice.invoice_id,
             "remarks": ticket.invoice.remarks,
             "package_request_status": ticket.status,
-            "package_request_id": ticket.request_id
+            "package_request_id": ticket.request_id,
+            "details": [{"detail_name": detail.detail.detail_name, "detail_type": detail.detail.detail_type, "value": detail.value} for detail in details]
         })
 
-    return jsonify(ticket_list)
+    return jsonify({'ticket_list': ticket_list, 'total_tickets': total_tickets})
 
 
 @app.route('/viewInvoiceFile/<filename>', methods=['GET'])
@@ -343,7 +363,6 @@ def update_invoice_status():
     if not ticket:
         return jsonify({"error": "Ticket not found"}), 404
 
-    # Check if the ticket has an associated invoice
     if not ticket.invoice:
         return jsonify({"error": "Invoice not found for the given ticket"}), 404
 
@@ -357,6 +376,21 @@ def update_invoice_status():
         ticket.invoice.remarks = None
 
     db.session.commit()
+
+    client_email = ticket.user.email
+    subject = 'IMCC Bantu 1-to-1 Notifications'
+
+    if new_status == "Receipt Rejected":
+        body = f"Dear {ticket.user.name},\n\nYour receipt status has been updated to: '{
+            new_status}'\nPlease login into your account to upload the receipt again.\n\nBest regards,\nIMCC Bantu 1-to-1 Admin"
+
+    if new_status == "Receipt Approved":
+        body = f"Dear {ticket.user.name},\n\nYour receipt status has been updated to: '{
+            new_status}'\nPlease login into your account to submit the required details.\n\nBest regards,\nIMCC Bantu 1-to-1 Admin"
+
+    msg = Message(subject, recipients=[client_email])
+    msg.body = body
+    mail.send(msg)
 
     return jsonify({"message": "Invoice status updated successfully"}), 200
 
@@ -377,39 +411,84 @@ def get_package_details(invoice_id):
     return jsonify({"package_details": details})
 
 
+# @app.route('/submitPackageRequest', methods=['POST'])
+# @login_required
+# def submit_package_request():
+#     data = request.get_json()
+#     package_request_id = data.get('package_request_id')
+#     details = data.get('details', [])
+
+#     package_request = PackageRequest.query.filter_by(
+#         invoice_id=package_request_id).first()
+#     if not package_request:
+#         return jsonify({"error": "Package request not found"}), 404
+
+#     # if package_request.status == 'Pending Package Details Approval':
+#     #     return jsonify({"error": "Package request has already been submitted"}), 400
+
+#     package_request.status = 'Pending Package Details Approval'
+#     db.session.add(package_request)
+#     db.session.commit()
+
+#     for detail in details:
+#         detail_name = detail.get('detail_name')
+#         detail_value = detail.get('value')
+#         detail_entry = Detail.query.filter_by(detail_name=detail_name).first()
+#         if detail_entry:
+#             request_detail = RequestDetail(
+#                 request_id=package_request.request_id,
+#                 detail_id=detail_entry.detail_id,
+#                 value=detail_value
+#             )
+#             db.session.add(request_detail)
+
+#     db.session.commit()
+#     return jsonify({"message": "Package request submitted successfully", "package_request": package_request.request_id}), 201
+
 @app.route('/submitPackageRequest', methods=['POST'])
 @login_required
 def submit_package_request():
-    data = request.get_json()
-    package_request_id = data.get('package_request_id')
-    details = data.get('details', [])
+    try:
+        data = request.get_json()
+        package_request_id = data.get('package_request_id')
+        details = data.get('details', [])
 
-    package_request = PackageRequest.query.filter_by(
-        invoice_id=package_request_id).first()
-    if not package_request:
-        return jsonify({"error": "Package request not found"}), 404
+        package_request = PackageRequest.query.filter_by(
+            invoice_id=package_request_id).first()
+        if not package_request:
+            response = make_response(jsonify({"error": "Package request not found"}), 404)
+            response.headers.add("Access-Control-Allow-Origin", "http://localhost:3000")
+            response.headers.add("Access-Control-Allow-Credentials", "true")
+            return response
 
-    if package_request.status == 'Pending Package Details Approval':
-        return jsonify({"error": "Package request has already been submitted"}), 400
+        package_request.status = 'Pending Package Details Approval'
+        db.session.add(package_request)
+        db.session.commit()
 
-    package_request.status = 'Pending Package Details Approval'
-    db.session.add(package_request)
-    db.session.commit()
+        for detail in details:
+            detail_name = detail.get('detail_name')
+            detail_value = detail.get('value')
+            detail_entry = Detail.query.filter_by(detail_name=detail_name).first()
+            if detail_entry:
+                request_detail = RequestDetail(
+                    request_id=package_request.request_id,
+                    detail_id=detail_entry.detail_id,
+                    value=detail_value
+                )
+                db.session.add(request_detail)
 
-    for detail in details:
-        detail_name = detail.get('detail_name')
-        detail_value = detail.get('value')
-        detail_entry = Detail.query.filter_by(detail_name=detail_name).first()
-        if detail_entry:
-            request_detail = RequestDetail(
-                request_id=package_request.request_id,
-                detail_id=detail_entry.detail_id,
-                value=detail_value
-            )
-            db.session.add(request_detail)
+        db.session.commit()
 
-    db.session.commit()
-    return jsonify({"message": "Package request submitted successfully", "package_request": package_request.request_id}), 201
+        response = make_response(jsonify({"message": "Package request submitted successfully", "package_request": package_request.request_id}), 201)
+        response.headers.add("Access-Control-Allow-Origin", "http://localhost:3000")
+        response.headers.add("Access-Control-Allow-Credentials", "true")
+        return response
+    except Exception as e:
+        db.session.rollback()
+        response = make_response(jsonify({"error": str(e)}), 500)
+        response.headers.add("Access-Control-Allow-Origin", "http://localhost:3000")
+        response.headers.add("Access-Control-Allow-Credentials", "true")
+        return response
 
 
 @app.route('/getPackageRequest/<int:request_id>', methods=['GET'])
@@ -503,9 +582,38 @@ def get_all_package_requests():
     return jsonify(result)
 
 
+# @app.route('/updatePackageRequestStatus', methods=['POST'])
+# @login_required
+# def update_package_request_status():
+#     # response = make_response()
+#     # response.headers.add("Access-Control-Allow-Origin", "http://localhost:3000")
+#     # response.headers.add("Access-Control-Allow-Credentials", "true")
+#     data = request.get_json()
+#     request_id = data.get('request_id')
+#     new_status = data.get('status')
+
+#     package_request = PackageRequest.query.get(request_id)
+#     if not package_request:
+#         return jsonify({"message": "Package request not found"}), 404
+
+#     package_request.status = new_status
+#     db.session.commit()
+
+#     if current_user.discriminator == "admin":
+#         body = f"Dear {package_request.user.name},\n\nYour package details status has been updated to: '{
+#             new_status}'\nPlease login into your account to view the subscribed Bantu 1-to-1 pakckage details.\n\nBest regards,\nIMCC Bantu 1-to-1 Admin"
+
+#     client_email = package_request.user.email
+#     subject = 'IMCC Bantu 1-to-1 Notifications'
+
+#     msg = Message(subject, recipients=[client_email])
+#     msg.body = body
+#     mail.send(msg)
+
+#     return jsonify({"message": "Package request status updated successfully"}), 200
+
 @app.route('/updatePackageRequestStatus', methods=['POST'])
 @login_required
-# @admin_required
 def update_package_request_status():
     data = request.get_json()
     request_id = data.get('request_id')
@@ -515,52 +623,83 @@ def update_package_request_status():
     if not package_request:
         return jsonify({"message": "Package request not found"}), 404
 
-    # if package_request.status != 'Pending Package Details Approval':
-    #     return jsonify({"message": "Only 'Pending Package Details Approval' package requests can be updated by admin"}), 400
-
     package_request.status = new_status
     db.session.commit()
 
-    return jsonify({"message": "Package request status updated successfully"}), 200
+    if current_user.discriminator == "admin":
+        body = f"Dear {package_request.user.name},\n\nYour package details status has been updated to: '{new_status}'\nPlease login into your account to view the subscribed Bantu 1-to-1 package details.\n\nBest regards,\nIMCC Bantu 1-to-1 Admin"
+
+        client_email = package_request.user.email
+        subject = 'IMCC Bantu 1-to-1 Notifications'
+
+        msg = Message(subject, recipients=[client_email])
+        msg.body = body
+        mail.send(msg)
+
+    response = jsonify({"message": "Package request status updated successfully"})
+    response.headers.add("Access-Control-Allow-Origin", "http://localhost:3000")
+    response.headers.add("Access-Control-Allow-Credentials", "true")
+
+    return response, 200
 
 
 @app.route('/submitOrUpdatePackageRequest', methods=['POST'])
 @login_required
 def submit_or_update_package_request():
-    data = request.get_json()
-    package_request_id = data.get('package_request_id')
-    new_status = data.get('status', 'Pending Approval')
-    details = data.get('details', [])
+    try:
+        response = make_response()  # Creating a response object
+        response.headers.add("Access-Control-Allow-Origin", "http://localhost:3000")
+        response.headers.add("Access-Control-Allow-Credentials", "true")
+        
+        data = request.get_json()
+        package_request_id = data.get('package_request_id')
+        new_status = data.get('status')
+        details = data.get('details', [])
 
-    package_request = PackageRequest.query.filter_by(
-        request_id=package_request_id).first()
-    if not package_request:
-        return jsonify({"error": "Package request not found"}), 404
+        package_request = PackageRequest.query.filter_by(
+            request_id=package_request_id).first()
+        if not package_request:
+            return jsonify({"error": "Package request not found"}), 404
 
-    package_request.status = new_status
-    db.session.add(package_request)
-    db.session.commit()
-
-    if new_status == 'Package Details Rejected' and details:
-        RequestDetail.query.filter_by(request_id=package_request_id).delete()
+        package_request.status = new_status
+        db.session.add(package_request)
         db.session.commit()
 
-    for detail in details:
-        detail_name = detail.get('detail_name')
-        detail_value = detail.get('value')
-        detail_entry = Detail.query.filter_by(detail_name=detail_name).first()
-        if detail_entry:
-            request_detail = RequestDetail(
-                request_id=package_request.request_id,
-                detail_id=detail_entry.detail_id,
-                value=detail_value
-            )
-            db.session.add(request_detail)
+        if new_status in ['Package Details Rejected. Waiting for client response.',
+                          'Package Details Rejected. Waiting for admin response.']:
+            if details:
+                RequestDetail.query.filter_by(
+                    request_id=package_request_id).delete()
+                db.session.commit()
+                for detail in details:
+                    detail_name = detail.get('detail_name')
+                    detail_value = detail.get('value')
+                    detail_entry = Detail.query.filter_by(
+                        detail_name=detail_name).first()
+                    if detail_entry:
+                        request_detail = RequestDetail(
+                            request_id=package_request.request_id,
+                            detail_id=detail_entry.detail_id,
+                            value=detail_value
+                        )
+                        db.session.add(request_detail)
+                db.session.commit()
 
-    db.session.commit()
+        if current_user.discriminator == "admin":
+            body = f"Dear {package_request.user.name},\n\nYour package details status has been updated to: '{
+                new_status}'\nPlease login into your account to accept or reject the package request details suggested by IMCC.\n\nBest regards,\nIMCC Bantu 1-to-1 Admin"
 
-    return jsonify({"message": "Package request updated successfully", "package_request": package_request.request_id}), 201
+            client_email = package_request.user.email
+            subject = 'IMCC Bantu 1-to-1 Notifications'
 
+            msg = Message(subject, recipients=[client_email])
+            msg.body = body
+            mail.send(msg)
+
+        return jsonify({"message": "Package request updated successfully", "package_request": package_request.request_id}), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/addMentorDetails', methods=['POST'])
 @login_required
@@ -576,7 +715,6 @@ def add_mentor_details():
     if not package_request:
         return jsonify({"error": "Package request not found"}), 404
 
-    # Update the existing package request with mentor details
     package_request.mentor_name = mentor_name
     package_request.mentor_email = mentor_email
 
@@ -677,17 +815,25 @@ def add_complaints():
 @app.route('/getPosts', methods=['GET'])
 def get_posts():
     try:
-        posts = Post.query.all()
+        page = int(request.args.get('page', 1))
+        limit = int(request.args.get('limit', 5))
+        offset = (page - 1) * limit
+
+        # Query the posts with pagination
+        posts = Post.query.order_by(Post.created_at.desc()).offset(
+            offset).limit(limit).all()
+        total_posts = Post.query.count()
 
         posts_data = [{
             'post_id': post.post_id,
             'title': post.title,
             'content': post.content,
             'category': post.category.name,
-            'user': post.user.name
+            'user': post.user.name,
+            'total_likes': post.total_likes()
         } for post in posts]
 
-        return jsonify(posts_data), 200
+        return jsonify({'posts': posts_data, 'totalPosts': total_posts}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -724,6 +870,104 @@ def create_post():
 
     return jsonify(post_data), 201
 
+
+@app.route('/likePost/<int:post_id>', methods=['POST'])
+@login_required  # Ensure the user is logged in
+def like_post(post_id):
+    try:
+        post_id = post_id
+        if not post_id:
+            return jsonify({'error': 'Post ID is required'}), 400
+
+        # Check if the post exists
+        post = Post.query.get(post_id)
+        if not post:
+            return jsonify({'error': 'Post not found'}), 404
+
+        # Check if the user has already liked the post
+        like = Like.query.filter_by(
+            post_id=post_id, user_id=current_user.id).first()
+
+        if like:
+            # If the like exists, remove it (unlike)
+            db.session.delete(like)
+            db.session.commit()
+            total_likes = post.total_likes()
+            return jsonify({'liked': False, 'totalLikes': total_likes}), 200
+        else:
+            # If the like does not exist, create it
+            new_like = Like(post_id=post_id,
+                            user_id=current_user.id, liked=True)
+            db.session.add(new_like)
+            db.session.commit()
+            total_likes = post.total_likes()
+            return jsonify({'liked': True, 'totalLikes': total_likes}), 200
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/getLikeStatus/<int:post_id>', methods=['GET'])
+@login_required  # Ensure the user is logged in
+def get_like_status(post_id):
+    try:
+        post_id = post_id
+        if not post_id:
+            return jsonify({'error': 'Post ID is required'}), 400
+
+        # Check if the post exists
+        post = Post.query.get(post_id)
+        if not post:
+            return jsonify({'error': 'Post not found'}), 404
+
+        # Check if the user has already liked the post
+        like = Like.query.filter_by(
+            post_id=post_id, user_id=current_user.id).first()
+        liked = like is not None
+
+        # Get the total number of likes for the post
+        total_likes = Like.query.filter_by(post_id=post_id, liked=True).count()
+
+        return jsonify({'liked': liked, 'totalLikes': total_likes}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/toggleLike', methods=['POST'])
+@login_required  # Ensure the user is logged in
+def toggle_like():
+    try:
+        post_id = request.json.get('post_id')
+        if not post_id:
+            return jsonify({'error': 'Post ID is required'}), 400
+
+        # Check if the post exists
+        post = Post.query.get(post_id)
+        if not post:
+            return jsonify({'error': 'Post not found'}), 404
+
+        # Check if the user has already liked the post
+        like = Like.query.filter_by(
+            post_id=post_id, user_id=current_user.id).first()
+
+        if like:
+            # If the like exists, remove it (unlike)
+            db.session.delete(like)
+            db.session.commit()
+            total_likes = post.total_likes()
+            return jsonify({'liked': False, 'totalLikes': total_likes}), 200
+        else:
+            # If the like does not exist, create it
+            new_like = Like(post_id=post_id,
+                            user_id=current_user.id, liked=True)
+            db.session.add(new_like)
+            db.session.commit()
+            total_likes = post.total_likes()
+            return jsonify({'liked': True, 'totalLikes': total_likes}), 200
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
 @app.route('/createReply', methods=['POST'])
 @login_required
 def create_reply():
@@ -750,6 +994,106 @@ def get_replies(post_id):
         return jsonify(replies_data), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+
+@app.route('/deletePost/<int:post_id>', methods=['DELETE'])
+@login_required
+def delete_post(post_id):
+    try:
+        post = Post.query.get(post_id)
+        if not post:
+            return jsonify({'error': 'Post not found'}), 404
+
+        if post.user_id != current_user.id and not current_user.discriminator == "admin":
+            return jsonify({'error': 'Unauthorized action'}), 403
+
+        # Delete all associated replies
+        Reply.query.filter_by(post_id=post_id).delete()
+        db.session.delete(post)
+        db.session.commit()
+        return jsonify({'message': 'Post deleted successfully'}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/editPost/<int:post_id>', methods=['PUT'])
+@login_required
+def edit_post(post_id):
+    try:
+        post = Post.query.get(post_id)
+        if not post:
+            return jsonify({'error': 'Post not found'}), 404
+
+        if post.user_id != current_user.id:
+            return jsonify({'error': 'Unauthorized action'}), 403
+
+        data = request.json
+        post.title = data.get('title', post.title)
+        post.content = data.get('content', post.content)
+        post.category_id = data.get('category_id', post.category_id)
+
+        db.session.commit()
+        return jsonify({'message': 'Post updated successfully'}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/deleteReply/<int:reply_id>', methods=['DELETE'])
+@login_required
+def delete_reply(reply_id):
+    try:
+        reply = Reply.query.get(reply_id)
+        if not reply:
+            return jsonify({'error': 'Reply not found'}), 404
+
+        if reply.user_id != current_user.id and not current_user.discriminator == "admin":
+            return jsonify({'error': 'Unauthorized action'}), 403
+
+        db.session.delete(reply)
+        db.session.commit()
+
+        return jsonify({'message': 'Reply deleted successfully'}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/admin_dashboard')
+def admin_dashboard():
+    # Query to get the count of package requests for each package
+    package_requests_count = db.session.query(Package.title, db.func.count(
+        PackageRequest.request_id)).join(PackageRequest).group_by(Package.title).all()
+
+    # Extract package titles and request counts
+    package_titles = [row[0] for row in package_requests_count]
+    request_counts = [row[1] for row in package_requests_count]
+
+    # Create a Plotly bar chart
+    bar_chart = go.Figure(data=[go.Bar(x=package_titles, y=request_counts)])
+
+    # Configure the layout of the chart
+    bar_chart.update_layout(
+        title='Bantu 1-to-1 Package Statistics',
+        xaxis=dict(title='Bantu 1-to-1 Package'),
+        yaxis=dict(title='Number of Purchase')
+    )
+
+    # Convert the Plotly chart to JSON
+    bar_chart_json = bar_chart.to_json()
+
+    # Returning a JSON response
+    return jsonify(bar_chart_json=bar_chart_json)
+
+
+app.config.update(
+    MAIL_SERVER='smtp.gmail.com',
+    MAIL_PORT=587,
+    MAIL_USE_TLS=True,
+    MAIL_USERNAME='wannadzirahimccfyp@gmail.com',
+    MAIL_PASSWORD='qminnnawxfzotlcx',
+    MAIL_DEFAULT_SENDER='IMCC-Bantu@usm.my'
+)
+
+mail = Mail(app)
 
 if __name__ == "__main__":
     app.run(debug=True)

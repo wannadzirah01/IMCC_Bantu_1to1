@@ -11,13 +11,14 @@ const Register = (props) => {
     const [matricNumber, setMatricNumber] = useState("");
     const [phoneNumber, setPhoneNumber] = useState("");
     const [school, setSchool] = useState("");
-    const [yearOfStudy, setYearOfStudy] = useState("");
+    // const [yearOfStudy, setYearOfStudy] = useState("");
 
     const handleSubmit = async (event) => {
         event.preventDefault();
         try {
             await axios.post("http://localhost:5000/register",
-                { email, password, name, matricNumber, phoneNumber, school, yearOfStudy});
+                // { email, password, name, matricNumber, phoneNumber, school, yearOfStudy});
+                { email, password, name, phoneNumber});
             alert("Successful user registration")
 
             navigate("/");
@@ -36,8 +37,8 @@ const Register = (props) => {
             <label htmlFor="name">Full Name</label>
             <input value={name} onChange={(e) => setName(e.target.value)} id="name" placeholder="Student Full Name" />
             
-            <label htmlFor="matricNumber">Matric Number</label>
-            <input value={matricNumber} onChange={(e) => setMatricNumber(e.target.value)} id="matricNumber" placeholder="Matric Number" />
+            {/* <label htmlFor="matricNumber">Matric Number</label>
+            <input value={matricNumber} onChange={(e) => setMatricNumber(e.target.value)} id="matricNumber" placeholder="Matric Number" /> */}
             
             <label htmlFor="email">Student Email</label>
             <input value={email} onChange={(e) => setEmail(e.target.value)} id="email" placeholder="studentemail@student.usm.my" />
@@ -48,11 +49,11 @@ const Register = (props) => {
             <label htmlFor="phoneNumber">Phone Number</label>
             <input value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} id="phoneNumber" placeholder="Phone Number" />
             
-            <label htmlFor="school">School</label>
-            <input value={school} onChange={(e) => setSchool(e.target.value)} id="school" placeholder="School" />
+            {/* <label htmlFor="school">School</label>
+            <input value={school} onChange={(e) => setSchool(e.target.value)} id="school" placeholder="School" /> */}
             
-            <label htmlFor="yearOfStudy">Year of Study</label>
-            <input value={yearOfStudy} onChange={(e) => setYearOfStudy(e.target.value)} id="yearOfStudy" placeholder="1, 2, 3, 4, or 5" />
+            {/* <label htmlFor="yearOfStudy">Year of Study</label>
+            <input value={yearOfStudy} onChange={(e) => setYearOfStudy(e.target.value)} id="yearOfStudy" placeholder="1, 2, 3, 4, or 5" /> */}
 
             <div class="divider"/>
             <div className="button-general">

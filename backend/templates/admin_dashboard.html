@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <!-- Include Plotly library -->
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+<body>
+    <!-- Other HTML content -->
+    <div id="plotly-chart"></div>
+
+    <script>
+        // Function to render the Plotly chart
+        function renderPlotlyChart(data, layout) {
+            Plotly.newPlot('plotly-chart', data, layout);
+        }
+
+        // Check if Plotly is defined (i.e., loaded)
+        if (typeof Plotly !== 'undefined') {
+            // Plotly is already loaded, so call the rendering function immediately
+            renderPlotlyChart(barChartData.data, barChartData.layout);
+        } else {
+            // Plotly is not loaded yet, wait for it to load
+            // This approach assumes that Plotly will be loaded eventually
+            // You can also use more sophisticated techniques like event listeners or promises
+            window.addEventListener('load', function() {
+                renderPlotlyChart(barChartData.data, barChartData.layout);
+            });
+        }
+    </script>
+</body>
+</html>

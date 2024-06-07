@@ -9,7 +9,7 @@ const PackageStatus = () => {
     const [ticketDetails, setTicketDetails] = useState([]);
     const [formData, setFormData] = useState({});
     const [invoiceId, setInvoiceId] = useState("");
-    const [packageDetailsList, setPackageDetailsList] = useState([]);
+    const [submittedDetails, setSubmittedDetails] = useState([]);
     const [ticketList, setTicketList] = useState([]);
     const [loading, setLoading] = useState(true);
     const [userRole, setUserRole] = useState("");
@@ -81,51 +81,16 @@ const PackageStatus = () => {
                 if (userRole === "admin") {
                     setTicketList(data.ticket_list);
                     setTotalTickets(data.total_tickets);
-
-                    if (data.ticket_list && Array.isArray(data.ticket_list)) {
-                        data.ticket_list.forEach((ticket) => {
-                            // Check if ticket is defined and contains the required properties
-                            if (
-                                ticket &&
-                                ticket.invoice_status === "Payment Rejected" &&
-                                ticket.remarks
-                            ) {
-                                initialRemarks[ticket.invoice_id] = ticket.remarks;
-                            }
-                        });
-                    } else {
-                        console.error(
-                            "data.ticket_list is not defined or not an array"
-                        );
-                    }
                 } else {
                     setTicketList(data);
                 }
 
                 const initialRemarks = {};
-                // Check if data.ticket_list is defined and is an array
-                console.log("hg", data)
-                // if (data.ticket_list && Array.isArray(data.ticket_list)) {
-                //     data.ticket_list.forEach((ticket) => {
-                //         // Check if ticket is defined and contains the required properties
-                //         if (
-                //             ticket &&
-                //             ticket.invoice_status === "Payment Rejected" &&
-                //             ticket.remarks
-                //         ) {
-                //             initialRemarks[ticket.invoice_id] = ticket.remarks;
-                //         }
-                //     });
-                // } else {
-                //     console.error(
-                //         "data.ticket_list is not defined or not an array"
-                //     );
-                // }
-                // data.ticket_list.forEach((ticket) => {
-                //     if (ticket.invoice_status === "Payment Rejected") {
-                //         initialRemarks[ticket.invoice_id] = ticket.remarks;
-                //     }
-                // });
+                data.ticket_list.forEach((ticket) => {
+                    if (ticket.invoice_status === "Payment Rejected") {
+                        initialRemarks[ticket.invoice_id] = ticket.remarks;
+                    }
+                });
                 setRemarks(initialRemarks);
             } catch (error) {
                 console.error("Error fetching invoice status:", error);
@@ -250,8 +215,6 @@ const PackageStatus = () => {
     };
 
     const handleEditPackageDetailsModalShow = (invoice) => {
-        console.log(invoice.details);
-        setPackageDetailsList(invoice.details);
         setEditableTicket(invoice);
         setShowEditPackageDetailsModal(true);
     };
@@ -307,8 +270,8 @@ const PackageStatus = () => {
                 `http://localhost:5000/getPackageDetails/${invoice_id}`,
                 { withCredentials: true }
             );
-            console.log("hhhhh", response);
-            setPackageDetailsList(response.data.package_details);
+            console.log(response);
+            setSubmittedDetails(response.data.package_details);
             const initialFormData = {};
             response.data.package_details.forEach((detail) => {
                 initialFormData[detail.detail_name] = detail.value || "";
@@ -319,42 +282,20 @@ const PackageStatus = () => {
         }
     };
 
-    // const handleNewAddedPackageDetail = (e, index) => {
-    //     const { name, value } = e.target;
-    //     setPackageDetailsList((prevDetails) => {
-    //         const updatedDetails = [...prevDetails];
-    //         updatedDetails[index] = { ...updatedDetails[index], value };
-    //         return updatedDetails;
-    //     });
-    // };
-
     const handleNewAddedPackageDetail = (e, index) => {
         const { name, value } = e.target;
-        setPackageDetailsList((prevDetails) => {
-            // Ensure prevDetails is an array
-            const detailsArray = Array.isArray(prevDetails) ? prevDetails : [];
-            const updatedDetails = [...detailsArray];
-            updatedDetails[index] = { ...updatedDetails[index], value: value };
+        setSubmittedDetails((prevDetails) => {
+            const updatedDetails = [...prevDetails];
+            updatedDetails[index] = { ...updatedDetails[index], value };
             return updatedDetails;
         });
     };
 
-    // const handleDetailChange = (e, index) => {
-    //     const { name, value } = e.target;
-    //     setPackageDetailsList((prevDetails) => {
-    //         const detailsArray = Array.isArray(prevDetails) ? prevDetails : [];
-    //         const updatedDetails = [...detailsArray];
-    //         updatedDetails[index] = { ...updatedDetails[index], [name]: value };
-    //         return updatedDetails;
-    //     });
-    // };
-
     const handleDetailChange = (e, index) => {
-        const { value } = e.target;
+        const { name, value } = e.target;
         setPackageRequestDetails((prevDetails) => {
-            const detailsArray = Array.isArray(prevDetails) ? prevDetails : [];
-            const updatedDetails = [...detailsArray];
-            updatedDetails[index] = { ...updatedDetails[index], value: value };
+            const updatedDetails = [...prevDetails];
+            updatedDetails[index] = { ...updatedDetails[index], value };
             return updatedDetails;
         });
     };
@@ -363,7 +304,7 @@ const PackageStatus = () => {
         try {
             const data = {
                 package_request_id: invoiceId,
-                details: packageDetailsList,
+                details: submittedDetails,
             };
             const response = await axios.post(
                 "http://localhost:5000/submitPackageRequest",
@@ -374,7 +315,7 @@ const PackageStatus = () => {
             alert("Package request submitted successfully");
             setShowTicketDetailsFormModal(false);
 
-            setTicketDetails((prevInvoiceList) =>
+            setTicketList((prevInvoiceList) =>
                 prevInvoiceList.map((ticket) =>
                     ticket.package_request_id === invoiceId
                         ? {
@@ -391,101 +332,51 @@ const PackageStatus = () => {
         }
     };
 
-    // const handlePackageDetailsStatus = async (ticketId, newStatus) => {
-    //     try {
-    //         const data = {
-    //             request_id: ticketId,
-    //             status: newStatus,
-    //         };
-
-    //         let response;
-    //         if (newStatus === "Package Details Rejected") {
-    //             if (userRole === "admin") {
-    //                 newStatus =
-    //                     "Package Details Rejected. Waiting for client response.";
-    //             } else if (userRole === "client") {
-    //                 newStatus =
-    //                     "Package Details Rejected. Waiting for admin response.";
-    //             }
-
-    //             await axios.post(
-    //                 "http://localhost:5000/submitOrUpdatePackageRequest",
-    //                 {
-    //                     package_request_id: ticketId,
-    //                     status: newStatus,
-    //                     details: packageDetailsList,
-    //                 },
-    //                 { withCredentials: true }
-    //             );
-    //             alert("Package request status updated successfully");
-    //             setShowEditPackageDetailsModal(false);
-    //         } else {
-    //             response = await axios.post(
-    //                 "http://localhost:5000/updatePackageRequestStatus",
-    //                 { withCredentials: true}, { data }
-                    
-    //             );
-
-    //             alert("Package request status updated successfully");
-    //             setShowEditPackageDetailsModal(false);
-    //         }
-
-    //         setShowEditModal(false);
-
-    //         setTicketList((prevInvoiceList) =>
-    //             prevInvoiceList.map((invoice) =>
-    //                 invoice.package_request_id === ticketId
-    //                     ? { ...invoice, package_request_status: newStatus }
-    //                     : invoice
-    //             )
-    //         );
-    //     } catch (error) {
-    //         console.error("Error updating package request status:", error);
-    //     }
-    // };
-
     const handlePackageDetailsStatus = async (ticketId, newStatus) => {
         try {
             const data = {
                 request_id: ticketId,
                 status: newStatus,
             };
-    
+
             let response;
-            let updatedStatus = newStatus; // Initialize updatedStatus outside conditional checks
-    
             if (newStatus === "Package Details Rejected") {
                 if (userRole === "admin") {
-                    updatedStatus = "Package Details Rejected. Waiting for client response.";
+                    newStatus =
+                        "Package Details Rejected. Waiting for client response.";
                 } else if (userRole === "client") {
-                    updatedStatus = "Package Details Rejected. Waiting for admin response.";
+                    newStatus =
+                        "Package Details Rejected. Waiting for admin response.";
                 }
-    
+
                 await axios.post(
                     "http://localhost:5000/submitOrUpdatePackageRequest",
                     {
                         package_request_id: ticketId,
-                        status: updatedStatus, // Use updatedStatus here
-                        details: packageDetailsList,
+                        status: newStatus,
+                        details: packageRequestDetails,
                     },
                     { withCredentials: true }
                 );
+                alert("Package request status updated successfully");
+                setShowEditPackageDetailsModal(false);
             } else {
                 response = await axios.post(
                     "http://localhost:5000/updatePackageRequestStatus",
-                    data, // Pass data object here
+                    data,
                     { withCredentials: true }
                 );
+
+                alert("Package request status updated successfully");
+                setShowEditPackageDetailsModal(false);
             }
-    
-            alert("Package request status updated successfully");
-            setShowEditPackageDetailsModal(false);
+
             setShowEditModal(false);
-    
+
             setTicketList((prevInvoiceList) =>
                 prevInvoiceList.map((invoice) =>
                     invoice.package_request_id === ticketId
-                        ? { ...invoice, package_request_status: updatedStatus } // Use updatedStatus here
+                        ? { ...invoice, package_request_status: newStatus }
                         : invoice
                 )
             );
@@ -960,7 +851,7 @@ const PackageStatus = () => {
                             {editableTicket?.file_name}
                         </span>
                     </p>
-                    {packageDetailsList?.map((detail, index) => (
+                    {packageRequestDetails?.map((detail, index) => (
                         <div key={index}>
                             {approvalStatus === "Package Details Rejected" ? (
                                 <React.Fragment>
@@ -976,10 +867,7 @@ const PackageStatus = () => {
                                         name={detail.detail_name}
                                         value={detail.value}
                                         onChange={(e) =>
-                                            handleNewAddedPackageDetail(
-                                                e,
-                                                index
-                                            )
+                                            handleDetailChange(e, index)
                                         }
                                         className="editable-input"
                                     />
@@ -1046,7 +934,7 @@ const PackageStatus = () => {
                     <Modal.Title>Update Ticket Details</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
-                    {packageDetailsList?.map((detail, index) => (
+                    {submittedDetails.map((detail, index) => (
                         <div key={index} className="form-group">
                             <React.Fragment>
                                 <label>{detail.detail_name}</label>

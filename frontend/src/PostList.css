@@ -1,12 +1,19 @@
   .post-card {
     margin-bottom: 20px; 
-    overflow-y: auto; /* Enable vertical scrolling when content exceeds max-height */
-    max-height: 30vh; 
+    /* overflow-y: auto; /* Enable vertical scrolling when content exceeds max-height */
+    /* max-height: 30vh;  */ 
   }
 
   .post-list {
-    width: 50rem;
-    align-content: center;
+    width: 60rem;
+    align-items: center;
+  }
+
+  .post-list-container {
+    margin: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
   
   .reply-link {
@@ -19,12 +26,14 @@
   }
   
   .each-reply-container {
-    border: 1px solid #ccc; 
+    /* border: 1px solid #ccc;  */
     padding: 10px; 
   }
   
   .reply {
     margin-bottom: 10px; 
+    border: 1px solid #ccc;
+    padding: 10px;
   }
   
   .reply-content {
@@ -36,11 +45,15 @@
     color: #666; 
   }
 
-  .post-list-container {
+  .forum-component {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 20px; /* Adjust margin between each post card */
-    margin-left: auto;
+    align-items: center;
   }
 
-  
+.page-button-container {
+  /* position: fixed;  */
+  right: 100; 
+  bottom: 0;
+  width: 100%; 
+}

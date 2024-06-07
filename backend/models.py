@@ -40,11 +40,14 @@ class Client(User):
     year_of_study = db.Column(db.String(5), nullable=True)
     __mapper_args__ = {'polymorphic_identity': 'client'}
 
-    def __init__(self, name, email, password, phone_number, matric_number, school, year_of_study):
+    # def __init__(self, name, email, password, phone_number, matric_number, school, year_of_study):
+    #     super().__init__(name, email, password, phone_number)
+    #     self.matric_number = matric_number
+    #     self.school = school
+    #     self.year_of_study = year_of_study
+
+    def __init__(self, name, email, password, phone_number):
         super().__init__(name, email, password, phone_number)
-        self.matric_number = matric_number
-        self.school = school
-        self.year_of_study = year_of_study
 
 class Package(db.Model):
     __tablename__ = 'package'
@@ -146,12 +149,12 @@ class Post(db.Model):
     user = db.relationship('User', backref='posts', lazy=True)
     categories = db.relationship('Category', backref='post', lazy=True)
 
-    def __init__(self, title, content, category_id, user_id):
-        self.title = title
-        self.content = content
-        self.category_id = category_id
-        self.user_id = user_id
-        self.replies = []  # Initialize replies as an empty list
+    # def __init__(self, title, content, category_id, user_id):
+    #     self.title = title
+    #     self.content = content
+    #     self.category_id = category_id
+    #     self.user_id = user_id
+    #     self.replies = []  # Initialize replies as an empty list
 
     # # Or if you're fetching posts from the database, ensure that replies are loaded
     # posts = Post.query.options(db.joinedload('replies')).all()
@@ -159,9 +162,9 @@ class Post(db.Model):
     def total_likes(self):
         return Like.query.filter_by(post_id=self.post_id, liked=True).count()
 
-    @staticmethod
-    def get_posts_ordered_by_likes():
-        return Post.query.outerjoin(Like).group_by(Post.post_id).order_by(db.func.count().desc()).all()
+    # @staticmethod
+    # def get_posts_ordered_by_likes():
+    #     return Post.query.outerjoin(Like).group_by(Post.post_id).order_by(db.func.count().desc()).all()
 
 class Reply(db.Model):
     reply_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
@@ -184,5 +187,5 @@ class Reply(db.Model):
 class Like(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    post_id = db.Column(db.Integer, db.ForeignKey('post.post_id'), nullable=False, unique=True)
+    post_id = db.Column(db.Integer, db.ForeignKey('post.post_id'), nullable=False)
     liked = db.Column(db.Boolean, nullable=False, default=True)

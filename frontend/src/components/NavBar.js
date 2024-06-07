@@ -28,7 +28,9 @@ function NavBar({ userRole, setUserRole }) {
         )}
         <CustomLink to="/ticketManagement">Service Status</CustomLink>
         {/* <CustomLink to="/complaintStatus">Complaint Status</CustomLink> */}
-        <CustomLink to="/dashboard">Dashboard</CustomLink>
+        {userRole == "admin" && (
+          <CustomLink to="/dashboard">Dashboard</CustomLink>
+        )}
         <CustomLink to="/forum">Forum</CustomLink>
         {userRole ? (
             <div className="button-general-logout">

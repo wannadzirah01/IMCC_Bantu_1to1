@@ -49,17 +49,17 @@ const User = () => {
                 </p>
                 {userRole === "client" && (
                     <>
-                        <p>
+                        {/* <p>
                             <strong>Matric Number:</strong>{" "}
                             {userData.matric_number}
-                        </p>
-                        <p>
+                        </p> */}
+                        {/* <p>
                             <strong>School:</strong> {userData.school}
-                        </p>
-                        <p>
+                        </p> */}
+                        {/* <p>
                             <strong>Year of Study:</strong>{" "}
                             {userData.year_of_study}
-                        </p>
+                        </p> */}
                     </>
                 )}
             </div>
