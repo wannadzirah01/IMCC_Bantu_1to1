@@ -11,11 +11,12 @@
   align-items: center;
 }
 
-.container.center {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  /* min-height: 100vh; This will make sure the container fills the entire viewport height */
+.register-page {
+  margin-top: 3rem;
+}
+
+.login-page {
+  margin-top: 7rem;
 }
 
 .auth-form-container {
@@ -56,6 +57,20 @@ button {
   color: white;
 }
 
+.info-bantu {
+  background-color: #ffffff;
+  padding: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  line-height: 10 rem;
+  width: 65%;
+  margin: auto;
+  margin-top: 2rem;
+  margin-bottom: 2rem;
+  font-weight: normal;
+}
+
 .package-container {
   border: 1px solid #000000;
   background-color: #ffffff;
@@ -64,7 +79,7 @@ button {
   justify-content: space-between;
   align-items: center;
   width: 65%;
-  margin:auto
+  margin: auto
 }
 
 .package-info {
@@ -242,6 +257,14 @@ html, body {
   margin-bottom: 20px;
 }
 
+.tickets-data {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+  align-items: center;
+}
+
 .chart-box {
   background-color: #09162b;
   color: white;
@@ -263,6 +286,23 @@ html, body {
   width: 50rem;
 }
 
+.chart-box-0 {
+  background-color: #09162b;
+  color: white;
+  padding: 20px;
+  margin: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+  width: 50rem;
+  text-align: center;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+
 h2 {
   text-align: center;
   margin-bottom: 20px;
@@ -278,4 +318,16 @@ h3 {
   height: 400px;
   margin: auto;
   color: #000000;
+}
+
+.count-boxes {
+  width: 40%;
+}
+
+.count-box {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  margin-bottom: 2rem;
+  width: 50%;
 }

@@ -37,35 +37,37 @@ const Login = ({ setUserRole }) => {
     };
 
     return (
-        <div className="auth-form-container">
-            <form className="login-form" onSubmit={handleSubmit}>
-                <h2>Log In</h2>
-                <label htmlFor="email">Student Email</label>
-                <input
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    type="email"
-                    placeholder="studentemail@student.usm.my"
-                    id="email"
-                    name="email"
-                />
-                <label htmlFor="password">Password</label>
-                <input
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    type="password"
-                    placeholder="password"
-                    id="password"
-                    name="password"
-                />
-                <div className="divider" />
-                <div className="button-general">
-                    <button type="submit">Login</button>
-                </div>
-            </form>
-            <Link to="/register" className="link-btn">
-                Don't have an account? Register
-            </Link>
+        <div className="login-page">
+            <div className="auth-form-container">
+                <form className="login-form" onSubmit={handleSubmit}>
+                    <h2>Log In</h2>
+                    <label htmlFor="email">Email</label>
+                    <input
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        type="email"
+                        placeholder="Please enter your email"
+                        id="email"
+                        name="email"
+                    />
+                    <label htmlFor="password">Password</label>
+                    <input
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        type="password"
+                        placeholder="Please enter your password"
+                        id="password"
+                        name="password"
+                    />
+                    <div className="divider" />
+                    <div className="button-general">
+                        <button type="submit">Login</button>
+                    </div>
+                </form>
+                <Link to="/register" className="link-btn">
+                    Don't have an account? Register
+                </Link>
+            </div>
         </div>
     );
 };

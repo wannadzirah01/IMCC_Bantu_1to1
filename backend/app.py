@@ -409,6 +409,39 @@ def get_all_tickets():
     return jsonify({'ticket_list': ticket_list, 'total_tickets': total_tickets})
 
 
+@app.route('/getTicketCounts', methods=['GET'])
+@login_required
+@admin_required
+def get_ticket_counts():
+    # Mapping frontend status categories to database statuses
+    status_mapping = {
+        "Pending": [
+            "Pending Receipt Approval",
+            "Receipt Approved",
+            "Receipt Rejected",
+            "Pending Package Details Approval",
+            "Package Details Rejected",
+            "Package Details Rejected. Waiting for admin response.",
+            "Package Details Rejected. Waiting for client response."
+        ],
+        "Active": ["Active", "Package Details Approved"],
+        "Completed": ["Completed"]
+    }
+
+    # Get the total count of all package requests
+    total_tickets = PackageRequest.query.count()
+
+    # Get the counts for each status category
+    status_counts = {key: 0 for key in status_mapping.keys()}
+    for category, statuses in status_mapping.items():
+        status_counts[category] = PackageRequest.query.filter(PackageRequest.status.in_(statuses)).count()
+
+    return jsonify({
+        'total_tickets': total_tickets,
+        'status_counts': status_counts
+    })
+
+
 @app.route('/viewInvoiceFile/<filename>', methods=['GET'])
 @login_required
 def view_invoice_file(filename):

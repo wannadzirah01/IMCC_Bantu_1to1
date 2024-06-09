@@ -32,6 +32,8 @@ const PackageStatus = () => {
     const [showComplaintFormModal, setShowComplaintFormModal] = useState(false);
     const [complaintDetails, setComplaintDetails] = useState("");
     const [ticketId, setTicketId] = useState("");
+    const [mentorName, setMentorName] = useState("");
+    const [mentorEmail, setMentorEmail] = useState("");
     const ticketsPerPage = 10;
 
     useEffect(() => {
@@ -208,6 +210,8 @@ const PackageStatus = () => {
                 ) {
                     const details = response.data.details;
 
+                    setMentorName(response.data.mentor_name);
+                    setMentorEmail(response.data.mentor_email);
                     // Update details for the specific invoiceId
                     setTicketDetails((prevState) => ({
                         ...prevState,
@@ -262,6 +266,7 @@ const PackageStatus = () => {
             alert("Receipt status updated successfully");
 
             setShowEditModal(false);
+            setApprovalStatus(null);
             setTicketList((prevInvoiceList) =>
                 prevInvoiceList.map((invoice) =>
                     invoice.package_request_id === ticketId
@@ -321,7 +326,7 @@ const PackageStatus = () => {
             );
             alert("Package request submitted successfully");
             setShowTicketDetailsFormModal(false);
-
+            setPackageDetailsList(null);
             setTicketList((prevInvoiceList) =>
                 prevInvoiceList.map((ticket) =>
                     ticket.invoice_id === invoiceId
@@ -369,6 +374,9 @@ const PackageStatus = () => {
                     { withCredentials: true }
                 );
 
+                setPackageDetailsList(null);
+                setApprovalStatus(null)
+
                 setTicketList((prevInvoiceList) =>
                     prevInvoiceList.map((invoice) =>
                         invoice.package_request_id === ticketId
@@ -386,6 +394,7 @@ const PackageStatus = () => {
                     data,
                     { withCredentials: true }
                 );
+                setApprovalStatus(null);
                 setTicketList((prevInvoiceList) =>
                     prevInvoiceList.map((invoice) =>
                         invoice.package_request_id === ticketId
@@ -517,6 +526,7 @@ const PackageStatus = () => {
         }
     };
 
+    const [showAddMentorModal, setShowAddMentorModal] = useState(false);
     const [showComplaintModal, setShowComplaintModal] = useState(false);
     const [complaintDetail, setComplaintDetail] = useState("");
     const [complaintStatus, setComplaintStatus] = useState("");
@@ -541,6 +551,13 @@ const PackageStatus = () => {
         }
     };
 
+    const handleShowAddMentorModal = async (requestId) => {
+        setTicketId(requestId);
+        setShowAddMentorModal(true);
+        setMentorEmail(null);
+        setMentorName(null);
+    };
+
     const handleCloseComplaintModal = () => {
         setShowComplaintModal(false);
     };
@@ -556,13 +573,30 @@ const PackageStatus = () => {
                 { complaint_status: newComplaintStatus }
             );
             setComplaintStatus(newComplaintStatus);
-            setShowComplaintModal(false)
+            setShowComplaintModal(false);
             alert("Complaint status updated successfully.");
         } catch (error) {
             console.error("Error updating complaint status:", error);
             alert("Error updating complaint status.");
         }
     };
+
+    const handleSubmitMentorDetails = async (ticketId, mentorName, mentorEmail) => {
+        try {
+            await axios.post(
+                `http://localhost:5000/addMentorDetails`,
+                { packageRequestId: ticketId, mentorName: mentorName, mentorEmail: mentorEmail },
+                { withCredentials: true }
+            );
+            setMentorEmail(mentorEmail);
+            setMentorName(mentorName)
+            setShowAddMentorModal(false);
+            alert("Mentor details added successfully.");
+        } catch (error) {
+            console.error("Error adding mentor details:", error);
+            alert("Error adding mentor details.");
+        }
+    }
 
     const renderPagination = () => {
         const totalPages = Math.ceil(totalTickets / ticketsPerPage);
@@ -582,7 +616,7 @@ const PackageStatus = () => {
     };
     return userRole ? (
         <div>
-            <h2>Bantu 1-to-1 Service Management</h2>
+            <h2>Bantu 1-to-1 Ticket Monitoring</h2>
             <div className="navigation-bar">
                 <button
                     className={activeButton === "All" ? "active" : ""}
@@ -705,6 +739,112 @@ const PackageStatus = () => {
                                     )}
                                     {ticketList.package_request_status ===
                                         "Package Details Approved" && (
+                                        <>
+                                            <p>
+                                                <b>Has Complaint:</b>{" "}
+                                                {ticketList.has_complaint ? (
+                                                    <a
+                                                        href="#"
+                                                        onClick={() =>
+                                                            handleShowComplaintModal(
+                                                                ticketList.package_request_id
+                                                            )
+                                                        }
+                                                    >
+                                                        Yes
+                                                    </a>
+                                                ) : (
+                                                    "No"
+                                                )}
+                                            </p>
+                                            {(ticketList.package ===
+                                                "Package 1: Study Essential" ||
+                                                ticketList.package ===
+                                                    "Package 5: Study Essential + Airport Pick-Up" ||
+                                                ticketList.package ===
+                                                    "Package 6: Study Essential + Campus Tour" ||
+                                                ticketList.package ===
+                                                    "Package 8: Study Essential + Airport Pick-Up + Campus Tour") && (
+                                                <>
+                                                    {(userRole === "admin" && mentorName === "Not assigned yet.") ? (
+                                                        <p>
+                                                            <b>Mentor Name:</b>{" "}
+                                                            <a
+                                                                href="#"
+                                                                onClick={() =>
+                                                                    handleShowAddMentorModal(
+                                                                        ticketList.package_request_id
+                                                                    )
+                                                                }
+                                                            >
+                                                                Click here to
+                                                                assign mentor
+                                                                name and email
+                                                            </a>
+                                                        </p>
+                                                    ) : (
+                                                        <>
+                                                            <p>
+                                                                <b>
+                                                                    Mentor Name:
+                                                                </b>{" "}
+                                                                {mentorName}
+                                                            </p>
+                                                            <p>
+                                                                <b>
+                                                                    Mentor
+                                                                    Email:
+                                                                </b>{" "}
+                                                                {mentorEmail}
+                                                            </p>
+                                                        </>
+                                                    )}
+                                                </>
+                                            )}
+                                        </>
+                                    )}
+                                </>
+                            )}
+
+                            {/* {expandedInvoices[ticketList.invoice_id] && (
+                                <>
+                                    {userRole === "admin" && (
+                                        <>
+                                            <p>
+                                                <b>Client Name:</b>{" "}
+                                                {ticketList.user_name}
+                                            </p>
+                                            <p>
+                                                <b>Client Email:</b>{" "}
+                                                {ticketList.email}
+                                            </p>
+                                        </>
+                                    )}
+                                    {(ticketList.package_request_status ===
+                                        "Pending Package Details Approval" ||
+                                        ticketList.package_request_status ===
+                                            "Package Details Approved" ||
+                                        ticketList.package_request_status ===
+                                            "Package Details Rejected" ||
+                                        ticketList.package_request_status ===
+                                            "Completed" ||
+                                        ticketList.package_request_status ===
+                                            "Package Details Rejected. Waiting for admin response." ||
+                                        ticketList.package_request_status ===
+                                            "Package Details Rejected. Waiting for client response.") && (
+                                        <>
+                                            {ticketDetails[
+                                                ticketList.invoice_id
+                                            ]?.map((detail, index) => (
+                                                <p key={index}>
+                                                    <b>{detail.detail_name}:</b>{" "}
+                                                    {detail.value}
+                                                </p>
+                                            ))}
+                                        </>
+                                    )}
+                                    {ticketList.package_request_status ===
+                                        "Package Details Approved" && (
                                         <p>
                                             <b>Has Complaint:</b>{" "}
                                             {ticketList.has_complaint ? (
@@ -724,7 +864,7 @@ const PackageStatus = () => {
                                         </p>
                                     )}
                                 </>
-                            )}
+                            )} */}
                             <Link
                                 onClick={() =>
                                     toggleExpand(
@@ -1201,10 +1341,10 @@ const PackageStatus = () => {
                 </Modal.Header>
                 <Modal.Body>
                     <p>
-                        <b>Detail:</b> {complaintDetail}
+                        <b>Detail:</b>{" "} {complaintDetail}
                     </p>
                     <p>
-                        <b>Status:</b>
+                        <b>Status:</b>{" "}
                         {userRole === "admin" ? (
                             <Form.Control
                                 as="select"
@@ -1229,7 +1369,9 @@ const PackageStatus = () => {
                     {userRole === "admin" && (
                         <Button
                             variant="primary"
-                            onClick={() => handleUpdateComplaintStatus(ticketId)}
+                            onClick={() =>
+                                handleUpdateComplaintStatus(ticketId)
+                            }
                         >
                             Update Status
                         </Button>
@@ -1239,6 +1381,58 @@ const PackageStatus = () => {
                         onClick={handleCloseComplaintModal}
                     >
                         Close
+                    </Button>
+                </Modal.Footer>
+            </Modal>
+
+            <Modal
+                show={showAddMentorModal}
+                onHide={() => setShowAddMentorModal(false)}
+            >
+                <Modal.Header closeButton>
+                    <Modal.Title>Mentor Details</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    <Form>
+                        <Form.Group controlId="mentorName">
+                            <Form.Label>Mentor Name:</Form.Label>
+                            <Form.Control
+                                type="text"
+                                placeholder="Enter Mentor Name"
+                                value={mentorName}
+                                onChange={(e) =>
+                                    setMentorName(e.target.value)
+                                }
+                            />
+                        </Form.Group>
+                        <Form.Group controlId="mentorEmail">
+                            <Form.Label>Mentor Email:</Form.Label>
+                            <Form.Control
+                                type="text"
+                                placeholder="Enter Mentor Email"
+                                value={mentorEmail}
+                                onChange={(e) =>
+                                    setMentorEmail(e.target.value)
+                                }
+                            />
+                        </Form.Group>
+                    </Form>
+                </Modal.Body>
+
+                <Modal.Footer>
+                    <Button
+                        variant="secondary"
+                        onClick={() => setShowAddMentorModal(false)}
+                    >
+                        Close
+                    </Button>
+                    <Button
+                        variant="primary"
+                        onClick={() =>
+                            handleSubmitMentorDetails(ticketId, mentorName, mentorEmail)
+                        }
+                    >
+                        Submit
                     </Button>
                 </Modal.Footer>
             </Modal>
