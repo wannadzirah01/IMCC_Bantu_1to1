@@ -17,7 +17,6 @@ const PackageStatus = () => {
     const [selectedFile, setSelectedFile] = useState(null);
     const [remarks, setRemarks] = useState({});
     const [editableTicket, setEditableTicket] = useState(null);
-    const [packageRequestDetails, setPackageRequestDetails] = useState(null);
     const [expandedInvoices, setExpandedInvoices] = useState({});
     const [showEditModal, setShowEditModal] = useState(false);
     const [showEditPackageDetailsModal, setShowEditPackageDetailsModal] =
@@ -30,7 +29,9 @@ const PackageStatus = () => {
     const [confirmationRequestId, setConfirmationRequestId] = useState(null);
     const [currentPage, setCurrentPage] = useState(1);
     const [totalTickets, setTotalTickets] = useState(0);
-
+    const [showComplaintFormModal, setShowComplaintFormModal] = useState(false);
+    const [complaintDetails, setComplaintDetails] = useState("");
+    const [ticketId, setTicketId] = useState("");
     const ticketsPerPage = 10;
 
     useEffect(() => {
@@ -52,92 +53,75 @@ const PackageStatus = () => {
     }, []);
 
     useEffect(() => {
-        const fetchTickets = async () => {
-            try {
-                setLoading(true);
-                let response;
-                if (userRole === "admin") {
-                    response = await axios.get(
-                        "http://localhost:5000/getAllTickets",
-                        {
-                            withCredentials: true,
-                            params: {
-                                page: currentPage,
-                                limit: ticketsPerPage,
-                            },
-                        }
-                    );
-                } else if (userRole === "client") {
-                    response = await axios.get(
-                        "http://localhost:5000/getUserTickets",
-                        { withCredentials: true }
-                    );
-                } else {
-                    setLoading(false);
-                    return;
-                }
-
-                const data = response.data;
-                if (userRole === "admin") {
-                    setTicketList(data.ticket_list);
-                    setTotalTickets(data.total_tickets);
-
-                    if (data.ticket_list && Array.isArray(data.ticket_list)) {
-                        data.ticket_list.forEach((ticket) => {
-                            // Check if ticket is defined and contains the required properties
-                            if (
-                                ticket &&
-                                ticket.invoice_status === "Payment Rejected" &&
-                                ticket.remarks
-                            ) {
-                                initialRemarks[ticket.invoice_id] = ticket.remarks;
-                            }
-                        });
-                    } else {
-                        console.error(
-                            "data.ticket_list is not defined or not an array"
-                        );
-                    }
-                } else {
-                    setTicketList(data);
-                }
-
-                const initialRemarks = {};
-                // Check if data.ticket_list is defined and is an array
-                console.log("hg", data)
-                // if (data.ticket_list && Array.isArray(data.ticket_list)) {
-                //     data.ticket_list.forEach((ticket) => {
-                //         // Check if ticket is defined and contains the required properties
-                //         if (
-                //             ticket &&
-                //             ticket.invoice_status === "Payment Rejected" &&
-                //             ticket.remarks
-                //         ) {
-                //             initialRemarks[ticket.invoice_id] = ticket.remarks;
-                //         }
-                //     });
-                // } else {
-                //     console.error(
-                //         "data.ticket_list is not defined or not an array"
-                //     );
-                // }
-                // data.ticket_list.forEach((ticket) => {
-                //     if (ticket.invoice_status === "Payment Rejected") {
-                //         initialRemarks[ticket.invoice_id] = ticket.remarks;
-                //     }
-                // });
-                setRemarks(initialRemarks);
-            } catch (error) {
-                console.error("Error fetching invoice status:", error);
-            } finally {
-                setLoading(false);
-            }
-        };
-
         if (userRole) {
             fetchTickets();
         }
-    }, [userRole, currentPage]);
+    }, [userRole, currentPage, filterStatus]);
+
+    const fetchTickets = async () => {
+        try {
+            setLoading(true);
+            let response;
+            const params = {
+                page: currentPage,
+                limit: ticketsPerPage,
+            };
+
+            if (filterStatus !== "All") {
+                params.status = filterStatus;
+            }
+
+            if (userRole === "admin") {
+                response = await axios.get(
+                    "http://localhost:5000/getAllTickets",
+                    {
+                        withCredentials: true,
+                        params: params,
+                    }
+                );
+            } else if (userRole === "client") {
+                response = await axios.get(
+                    "http://localhost:5000/getUserTickets",
+                    { withCredentials: true }
+                );
+            } else {
+                setLoading(false);
+                return;
+            }
+
+            const data = response.data;
+            if (userRole === "admin") {
+                setTicketList(data.ticket_list);
+                setTotalTickets(data.total_tickets);
+
+                if (data.ticket_list && Array.isArray(data.ticket_list)) {
+                    data.ticket_list.forEach((ticket) => {
+                        if (
+                            ticket &&
+                            ticket.invoice_status === "Payment Rejected" &&
+                            ticket.remarks
+                        ) {
+                            initialRemarks[ticket.invoice_id] = ticket.remarks;
+                        }
+                    });
+                } else {
+                    console.error(
+                        "data.ticket_list is not defined or not an array"
+                    );
+                }
+            } else {
+                setTicketList(data);
+            }
+
+            const initialRemarks = {};
+
+            setRemarks(initialRemarks);
+        } catch (error) {
+            console.error("Error fetching invoice status:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const handleViewFile = (filename) => {
         const fileUrl = `http://localhost:5000/viewInvoiceFile/${filename}`;
@@ -171,7 +155,6 @@ const PackageStatus = () => {
             );
 
             alert("Invoice uploaded successfully");
-            console.log(response.data);
             const newFileName = response.data.file_name;
 
             setTicketList((prevInvoiceList) =>
@@ -209,7 +192,6 @@ const PackageStatus = () => {
                     `http://localhost:5000/getPackageRequest/${packageRequestId}`,
                     { withCredentials: true }
                 );
-                console.log(response.data);
 
                 const packageRequestStatus = response.data.status;
 
@@ -250,7 +232,6 @@ const PackageStatus = () => {
     };
 
     const handleEditPackageDetailsModalShow = (invoice) => {
-        console.log(invoice.details);
         setPackageDetailsList(invoice.details);
         setEditableTicket(invoice);
         setShowEditPackageDetailsModal(true);
@@ -299,7 +280,6 @@ const PackageStatus = () => {
 
     const handleTicketDetailsShow = async (invoice_id) => {
         setInvoiceId(invoice_id);
-        console.log(invoice_id);
         setShowTicketDetailsFormModal(true);
 
         try {
@@ -307,7 +287,6 @@ const PackageStatus = () => {
                 `http://localhost:5000/getPackageDetails/${invoice_id}`,
                 { withCredentials: true }
             );
-            console.log("hhhhh", response);
             setPackageDetailsList(response.data.package_details);
             const initialFormData = {};
             response.data.package_details.forEach((detail) => {
@@ -319,19 +298,9 @@ const PackageStatus = () => {
         }
     };
 
-    // const handleNewAddedPackageDetail = (e, index) => {
-    //     const { name, value } = e.target;
-    //     setPackageDetailsList((prevDetails) => {
-    //         const updatedDetails = [...prevDetails];
-    //         updatedDetails[index] = { ...updatedDetails[index], value };
-    //         return updatedDetails;
-    //     });
-    // };
-
     const handleNewAddedPackageDetail = (e, index) => {
         const { name, value } = e.target;
         setPackageDetailsList((prevDetails) => {
-            // Ensure prevDetails is an array
             const detailsArray = Array.isArray(prevDetails) ? prevDetails : [];
             const updatedDetails = [...detailsArray];
             updatedDetails[index] = { ...updatedDetails[index], value: value };
@@ -339,27 +308,7 @@ const PackageStatus = () => {
         });
     };
 
-    // const handleDetailChange = (e, index) => {
-    //     const { name, value } = e.target;
-    //     setPackageDetailsList((prevDetails) => {
-    //         const detailsArray = Array.isArray(prevDetails) ? prevDetails : [];
-    //         const updatedDetails = [...detailsArray];
-    //         updatedDetails[index] = { ...updatedDetails[index], [name]: value };
-    //         return updatedDetails;
-    //     });
-    // };
-
-    const handleDetailChange = (e, index) => {
-        const { value } = e.target;
-        setPackageRequestDetails((prevDetails) => {
-            const detailsArray = Array.isArray(prevDetails) ? prevDetails : [];
-            const updatedDetails = [...detailsArray];
-            updatedDetails[index] = { ...updatedDetails[index], value: value };
-            return updatedDetails;
-        });
-    };
-
-    const handleSubmitTicketDetails = async () => {
+    const handleSubmitTicketDetails = async (ticketId) => {
         try {
             const data = {
                 package_request_id: invoiceId,
@@ -370,17 +319,17 @@ const PackageStatus = () => {
                 data,
                 { withCredentials: true }
             );
-            console.log(response.data);
             alert("Package request submitted successfully");
             setShowTicketDetailsFormModal(false);
 
-            setTicketDetails((prevInvoiceList) =>
+            setTicketList((prevInvoiceList) =>
                 prevInvoiceList.map((ticket) =>
-                    ticket.package_request_id === invoiceId
+                    ticket.invoice_id === invoiceId
                         ? {
                               ...ticket,
                               package_request_status:
                                   "Pending Package Details Approval",
+                              details: packageDetailsList,
                           }
                         : ticket
                 )
@@ -391,104 +340,67 @@ const PackageStatus = () => {
         }
     };
 
-    // const handlePackageDetailsStatus = async (ticketId, newStatus) => {
-    //     try {
-    //         const data = {
-    //             request_id: ticketId,
-    //             status: newStatus,
-    //         };
-
-    //         let response;
-    //         if (newStatus === "Package Details Rejected") {
-    //             if (userRole === "admin") {
-    //                 newStatus =
-    //                     "Package Details Rejected. Waiting for client response.";
-    //             } else if (userRole === "client") {
-    //                 newStatus =
-    //                     "Package Details Rejected. Waiting for admin response.";
-    //             }
-
-    //             await axios.post(
-    //                 "http://localhost:5000/submitOrUpdatePackageRequest",
-    //                 {
-    //                     package_request_id: ticketId,
-    //                     status: newStatus,
-    //                     details: packageDetailsList,
-    //                 },
-    //                 { withCredentials: true }
-    //             );
-    //             alert("Package request status updated successfully");
-    //             setShowEditPackageDetailsModal(false);
-    //         } else {
-    //             response = await axios.post(
-    //                 "http://localhost:5000/updatePackageRequestStatus",
-    //                 { withCredentials: true}, { data }
-                    
-    //             );
-
-    //             alert("Package request status updated successfully");
-    //             setShowEditPackageDetailsModal(false);
-    //         }
-
-    //         setShowEditModal(false);
-
-    //         setTicketList((prevInvoiceList) =>
-    //             prevInvoiceList.map((invoice) =>
-    //                 invoice.package_request_id === ticketId
-    //                     ? { ...invoice, package_request_status: newStatus }
-    //                     : invoice
-    //             )
-    //         );
-    //     } catch (error) {
-    //         console.error("Error updating package request status:", error);
-    //     }
-    // };
-
     const handlePackageDetailsStatus = async (ticketId, newStatus) => {
         try {
             const data = {
                 request_id: ticketId,
                 status: newStatus,
             };
-    
+
             let response;
-            let updatedStatus = newStatus; // Initialize updatedStatus outside conditional checks
-    
+            let updatedStatus = newStatus;
+
             if (newStatus === "Package Details Rejected") {
                 if (userRole === "admin") {
-                    updatedStatus = "Package Details Rejected. Waiting for client response.";
+                    updatedStatus =
+                        "Package Details Rejected. Waiting for client response.";
                 } else if (userRole === "client") {
-                    updatedStatus = "Package Details Rejected. Waiting for admin response.";
+                    updatedStatus =
+                        "Package Details Rejected. Waiting for admin response.";
                 }
-    
+
                 await axios.post(
                     "http://localhost:5000/submitOrUpdatePackageRequest",
                     {
                         package_request_id: ticketId,
-                        status: updatedStatus, // Use updatedStatus here
+                        status: updatedStatus,
                         details: packageDetailsList,
                     },
                     { withCredentials: true }
                 );
+
+                setTicketList((prevInvoiceList) =>
+                    prevInvoiceList.map((invoice) =>
+                        invoice.package_request_id === ticketId
+                            ? {
+                                  ...invoice,
+                                  package_request_status: updatedStatus,
+                                  details: packageDetailsList,
+                              }
+                            : invoice
+                    )
+                );
             } else {
                 response = await axios.post(
                     "http://localhost:5000/updatePackageRequestStatus",
-                    data, // Pass data object here
+                    data,
                     { withCredentials: true }
                 );
+                setTicketList((prevInvoiceList) =>
+                    prevInvoiceList.map((invoice) =>
+                        invoice.package_request_id === ticketId
+                            ? {
+                                  ...invoice,
+                                  package_request_status: updatedStatus,
+                              }
+                            : invoice
+                    )
+                );
             }
-    
+
             alert("Package request status updated successfully");
             setShowEditPackageDetailsModal(false);
             setShowEditModal(false);
-    
-            setTicketList((prevInvoiceList) =>
-                prevInvoiceList.map((invoice) =>
-                    invoice.package_request_id === ticketId
-                        ? { ...invoice, package_request_status: updatedStatus } // Use updatedStatus here
-                        : invoice
-                )
-            );
         } catch (error) {
             console.error("Error updating package request status:", error);
         }
@@ -534,41 +446,122 @@ const PackageStatus = () => {
         setShowCloseTicketModal(false);
     };
 
+    const statusMapping = (status) => {
+        const pendingStatuses = [
+            "Pending Receipt Approval",
+            "Receipt Approved",
+            "Receipt Rejected",
+            "Pending Package Details Approval",
+            "Package Details Rejected",
+            "Package Details Rejected. Waiting for admin response.",
+            "Package Details Rejected. Waiting for client response.",
+        ];
+
+        const activeStatuses = ["Active", "Package Details Approved"];
+
+        if (pendingStatuses.includes(status)) {
+            return "Pending";
+        } else if (activeStatuses.includes(status)) {
+            return "Active";
+        } else {
+            return status;
+        }
+    };
+
     const filteredInvoiceList = Array.isArray(ticketList)
         ? filterStatus === "All"
             ? ticketList
             : Array.isArray(filterStatus)
             ? ticketList.filter((invoice) =>
-                  filterStatus.includes(invoice.package_request_status)
+                  filterStatus.includes(
+                      statusMapping(invoice.package_request_status)
+                  )
               )
             : ticketList.filter(
-                  (invoice) => invoice.package_request_status === filterStatus
+                  (invoice) =>
+                      statusMapping(invoice.package_request_status) ===
+                      filterStatus
               )
         : [];
 
     const handleButtonClick = (status) => {
         setActiveButton(status);
-        if (status === "All") {
-            setFilterStatus("All");
-        } else if (status === "Pending") {
-            setFilterStatus([
-                "Pending Receipt Approval",
-                "Receipt Approved",
-                "Receipt Rejected",
-                "Pending Package Details Approval",
-                "Package Details Rejected",
-                "Package Details Rejected. Waiting for admin response.",
-                "Package Details Rejected. Waiting for client response.",
-            ]);
-        } else if (status === "Active") {
-            setFilterStatus(["Active", "Package Details Approved"]);
-        } else if (status === "Completed") {
-            setFilterStatus("Completed");
-        }
+        setCurrentPage(1);
+        setFilterStatus(status);
     };
 
     const handlePageChange = (pageNumber) => {
         setCurrentPage(pageNumber);
+    };
+
+    const handleShowComplaintForm = (ticketId) => {
+        setTicketId(ticketId);
+        setShowComplaintFormModal(true);
+    };
+
+    const handleSubmitComplaint = (complaintticketId, complaintDetails) => {
+        try {
+            axios.post(
+                "http://localhost:5000/addComplaints",
+                {
+                    packageRequestId: complaintticketId,
+                    complaintDetails: complaintDetails,
+                },
+                { withCredentials: true }
+            );
+            alert("Your complaint has been successfully submitted.");
+            setShowComplaintFormModal(false);
+            setComplaintDetails("");
+        } catch (error) {
+            console.error("Error submitting complaint details:", error);
+        }
+    };
+
+    const [showComplaintModal, setShowComplaintModal] = useState(false);
+    const [complaintDetail, setComplaintDetail] = useState("");
+    const [complaintStatus, setComplaintStatus] = useState("");
+    const [complaintCreated, setComplaintCreated] = useState("");
+    const [newComplaintStatus, setNewComplaintStatus] = useState("");
+
+    const handleShowComplaintModal = async (requestId) => {
+        setTicketId(requestId)
+        setShowComplaintModal(true);
+        try {
+            const response = await axios.get(
+                `http://localhost:5000/get_complaint/${requestId}`,
+                { withCredentials: true }
+            );
+            setComplaintDetail(response.data.complaint_detail);
+            setComplaintStatus(response.data.complaint_status);
+            setComplaintCreated(response.data.complaint_created);
+            console.log(response);
+        } catch (error) {
+            console.error("Error fetching complaint:", error);
+            alert("Error fetching complaint.");
+        }
+    };
+
+    const handleCloseComplaintModal = () => {
+        setShowComplaintModal(false);
+    };
+
+    const handleStatusChange = (e) => {
+        setNewComplaintStatus(e.target.value);
+    };
+
+    const handleUpdateComplaintStatus = async (ticketId) => {
+        try {
+            await axios.post(
+                `http://localhost:5000/api/update_complaint_status/${ticketId}`,
+                { complaint_status: newComplaintStatus }
+            );
+            setComplaintStatus(newComplaintStatus);
+            setShowComplaintModal(false)
+            alert("Complaint status updated successfully.");
+        } catch (error) {
+            console.error("Error updating complaint status:", error);
+            alert("Error updating complaint status.");
+        }
     };
 
     const renderPagination = () => {
@@ -710,6 +703,26 @@ const PackageStatus = () => {
                                             ))}
                                         </>
                                     )}
+                                    {ticketList.package_request_status ===
+                                        "Package Details Approved" && (
+                                        <p>
+                                            <b>Has Complaint:</b>{" "}
+                                            {ticketList.has_complaint ? (
+                                                <a
+                                                    href="#"
+                                                    onClick={() =>
+                                                        handleShowComplaintModal(
+                                                            ticketList.package_request_id
+                                                        )
+                                                    }
+                                                >
+                                                    Yes
+                                                </a>
+                                            ) : (
+                                                "No"
+                                            )}
+                                        </p>
+                                    )}
                                 </>
                             )}
                             <Link
@@ -776,6 +789,22 @@ const PackageStatus = () => {
                                     </button>
                                 </div>
                             )}
+                        {userRole === "client" &&
+                            ticketList.package_request_status ===
+                                "Package Details Approved" && (
+                                <div className="complaint-link">
+                                    <Link
+                                        onClick={() =>
+                                            handleShowComplaintForm(
+                                                ticketList.invoice_id
+                                            )
+                                        }
+                                    >
+                                        Click here if you have any issues with
+                                        the current service
+                                    </Link>
+                                </div>
+                            )}
                         {userRole === "admin" &&
                             ticketList.package_request_status ===
                                 "Package Details Approved" && (
@@ -791,7 +820,7 @@ const PackageStatus = () => {
                                     </button>
                                 </div>
                             )}
-                        {confirmationRequestId ===
+                        {/* {confirmationRequestId ===
                             ticketList.package_request_id && (
                             <Modal
                                 show={showCloseTicketModal}
@@ -815,6 +844,46 @@ const PackageStatus = () => {
                                     <Button
                                         variant="primary"
                                         onClick={handleConfirmClose}
+                                    >
+                                        Confirm
+                                    </Button>
+                                </Modal.Footer>
+                            </Modal>
+                        )} */}
+                        {confirmationRequestId ===
+                            ticketList.package_request_id && (
+                            <Modal
+                                show={showCloseTicketModal}
+                                onHide={handleCloseTicketModalClose}
+                            >
+                                <Modal.Header closeButton>
+                                    <Modal.Title>
+                                        Close Ticket Confirmation
+                                    </Modal.Title>
+                                </Modal.Header>
+                                <Modal.Body>
+                                    Please confirm you want to close the ticket.
+                                </Modal.Body>
+                                <Modal.Footer>
+                                    <Button
+                                        variant="secondary"
+                                        onClick={() =>
+                                            setConfirmationRequestId(null)
+                                        }
+                                    >
+                                        Close
+                                    </Button>
+                                    <Button
+                                        variant="primary"
+                                        onClick={() => {
+                                            if (ticketList.has_complaint) {
+                                                alert(
+                                                    "This ticket has unresolved complaint. Please resolve the complaint first."
+                                                );
+                                            } else {
+                                                handleConfirmClose();
+                                            }
+                                        }}
                                     >
                                         Confirm
                                     </Button>
@@ -1001,7 +1070,6 @@ const PackageStatus = () => {
                             value={approvalStatus}
                             onChange={(e) => {
                                 setApprovalStatus(e.target.value);
-                                console.log(e.target.value);
                             }}
                         >
                             <option value="Pending Package Details Approval">
@@ -1076,9 +1144,101 @@ const PackageStatus = () => {
                     </Button>
                     <Button
                         variant="primary"
-                        onClick={() => handleSubmitTicketDetails()}
+                        onClick={() =>
+                            handleSubmitTicketDetails(
+                                editableTicket?.package_request_id
+                            )
+                        }
                     >
                         Submit
+                    </Button>
+                </Modal.Footer>
+            </Modal>
+
+            <Modal
+                show={showComplaintFormModal}
+                onHide={() => setShowComplaintFormModal(false)}
+            >
+                <Modal.Header closeButton>
+                    <Modal.Title>Submit Complaint</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    <Form>
+                        <Form.Group controlId="complaintDetails">
+                            <Form.Label>Details</Form.Label>
+                            <Form.Control
+                                type="text"
+                                placeholder="Enter Complaint Details"
+                                value={complaintDetails}
+                                onChange={(e) =>
+                                    setComplaintDetails(e.target.value)
+                                }
+                            />
+                        </Form.Group>
+                    </Form>
+                </Modal.Body>
+
+                <Modal.Footer>
+                    <Button
+                        variant="secondary"
+                        onClick={() => setShowComplaintFormModal(false)}
+                    >
+                        Close
+                    </Button>
+                    <Button
+                        variant="primary"
+                        onClick={() =>
+                            handleSubmitComplaint(ticketId, complaintDetails)
+                        }
+                    >
+                        Submit
+                    </Button>
+                </Modal.Footer>
+            </Modal>
+            <Modal show={showComplaintModal} onHide={handleCloseComplaintModal}>
+                <Modal.Header closeButton>
+                    <Modal.Title>Complaint Details</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    <p>
+                        <b>Detail:</b> {complaintDetail}
+                    </p>
+                    <p>
+                        <b>Status:</b>
+                        {userRole === "admin" ? (
+                            <Form.Control
+                                as="select"
+                                value={newComplaintStatus}
+                                onChange={handleStatusChange}
+                            >
+                                <option value="Not Resolved Yet">
+                                    Not Resolved Yet
+                                </option>
+                                <option value="Resolved">Resolved</option>
+                            </Form.Control>
+                        ) : (
+                            complaintStatus
+                        )}
+                    </p>
+                    <p>
+                        <b>Created:</b>{" "}
+                        {new Date(complaintCreated).toLocaleString()}
+                    </p>
+                </Modal.Body>
+                <Modal.Footer>
+                    {userRole === "admin" && (
+                        <Button
+                            variant="primary"
+                            onClick={() => handleUpdateComplaintStatus(ticketId)}
+                        >
+                            Update Status
+                        </Button>
+                    )}
+                    <Button
+                        variant="secondary"
+                        onClick={handleCloseComplaintModal}
+                    >
+                        Close
                     </Button>
                 </Modal.Footer>
             </Modal>

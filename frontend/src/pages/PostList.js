@@ -83,13 +83,17 @@ const PostList = () => {
     useEffect(() => {
         fetchCategories();
         fetchPosts();
-    }, [currentPage]);
+    }, [currentPage, filterCategory]);
 
     const fetchPosts = async () => {
         await axios
             .get("http://localhost:5000/getPosts", {
                 withCredentials: true,
-                params: { page: currentPage, limit: postsPerPage },
+                params: {
+                    page: currentPage,
+                    limit: postsPerPage,
+                    category: filterCategory // Include the filter category in the request
+                },
             })
             .then((response) => {
                 const fetchedPosts = response.data.posts;
@@ -150,6 +154,7 @@ const PostList = () => {
 
     const handleFilterCategoryChange = (event) => {
         setFilterCategory(event.target.value);
+        setCurrentPage(1); // Reset to the first page when the filter changes
     };
 
     const handleSubmit = () => {
@@ -374,7 +379,7 @@ const PostList = () => {
 
     return (
         <>
-            <h2>Forum</h2>
+            <h2>Discussion Forum</h2>
             <div className="forum-component">
                 <div className="button-general ms-5">
                     <Button onClick={handleAddPost}>+ New Post</Button>

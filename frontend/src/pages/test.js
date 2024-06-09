@@ -191,7 +191,6 @@ const PackageStatus = () => {
                 ) {
                     const details = response.data.details;
 
-                    // Update details for the specific invoiceId
                     setTicketDetails((prevState) => ({
                         ...prevState,
                         [invoiceId]: details,
