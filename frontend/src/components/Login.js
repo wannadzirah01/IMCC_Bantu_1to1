@@ -13,7 +13,7 @@ const Login = ({ setUserRole }) => {
         try {
             const response = await axios.post(
                 // "http://localhost:5000/login",
-                "https://imcc-bantu-1to1-2.onrender.com/login",
+                "https://imcc-bantu-1to1.onrender.com/login",
                 { email, password },
                 { withCredentials: true }
             );
@@ -21,7 +21,7 @@ const Login = ({ setUserRole }) => {
 
             const userRoleResponse = await axios.get(
                 // "http://localhost:5000/getUserRole",
-                "https://imcc-bantu-1to1-2.onrender.com/getUserRole",
+                "https://imcc-bantu-1to1.onrender.com/getUserRole",
                 { withCredentials: true }
             );
             setUserRole(userRoleResponse.data.role);

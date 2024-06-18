@@ -18,7 +18,7 @@ const Register = (props) => {
         try {
             await axios.post(
                 // "http://localhost:5000/register",
-                "https://imcc-bantu-1to1-2.onrender.com/register",
+                "https://imcc-bantu-1to1.onrender.com/register",
                 // { email, password, name, matricNumber, phoneNumber, school, yearOfStudy});
                 { email, password, name, phoneNumber }
             );
