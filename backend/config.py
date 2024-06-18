@@ -28,7 +28,7 @@ class ApplicationConfig:
     # Use Redis Labs for session storage
     REDIS_HOST = 'redis-11351.c295.ap-southeast-1-1.ec2.redns.redis-cloud.com'  # Replace with your Redis Labs host
     REDIS_PORT = '11351'  # Replace with your Redis Labs port
-    REDIS_PASSWORD = 'N@dz1r@H'  # Replace with your Redis Labs password
+    REDIS_PASSWORD = 'LHmGAPLb9XtcaUz0K3QiJkkwilxSynnw'  # Replace with your Redis Labs password
     SESSION_TYPE = 'redis'
     SESSION_PERMANENT = False
     SESSION_USE_SIGNER = True
