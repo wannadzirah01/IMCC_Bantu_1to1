@@ -446,12 +446,10 @@ def update_invoice_status():
     subject = 'IMCC Bantu 1-to-1 Notifications'
 
     if new_status == "Receipt Rejected":
-        body = f"Dear {ticket.user.name},\n\nYour receipt status has been updated to: '{
-            new_status}'\nPlease login into your account to upload the receipt again.\n\nBest regards,\nIMCC Bantu 1-to-1 Admin"
+        body = f"Dear {ticket.user.name},\n\nYour receipt status has been updated to: '{new_status}'\nPlease login into your account to upload the receipt again.\n\nBest regards,\nIMCC Bantu 1-to-1 Admin"
 
     if new_status == "Receipt Approved":
-        body = f"Dear {ticket.user.name},\n\nYour receipt status has been updated to: '{
-            new_status}'\nPlease login into your account to submit the required details.\n\nBest regards,\nIMCC Bantu 1-to-1 Admin"
+        body = f"Dear {ticket.user.name},\n\nYour receipt status has been updated to: '{new_status}'\nPlease login into your account to submit the required details.\n\nBest regards,\nIMCC Bantu 1-to-1 Admin"
 
     msg = Message(subject, recipients=[client_email])
     msg.body = body
@@ -672,8 +670,7 @@ def update_package_request_status():
     db.session.commit()
 
     if current_user.discriminator == "admin":
-        body = f"Dear {package_request.user.name},\n\nYour package details status has been updated to: '{
-            new_status}'\nPlease login into your account to view the subscribed Bantu 1-to-1 pakckage details.\n\nBest regards,\nIMCC Bantu 1-to-1 Admin"
+        body = f"Dear {package_request.user.name},\n\nYour package details status has been updated to: '{new_status}'\nPlease login into your account to view the subscribed Bantu 1-to-1 pakckage details.\n\nBest regards,\nIMCC Bantu 1-to-1 Admin"
 
     client_email = package_request.user.email
     subject = 'IMCC Bantu 1-to-1 Notifications'
@@ -763,8 +760,7 @@ def submit_or_update_package_request():
                 db.session.commit()
 
         if current_user.discriminator == "admin":
-            body = f"Dear {package_request.user.name},\n\nYour package details status has been updated to: '{
-                new_status}'\nPlease login into your account to accept or reject the package request details suggested by IMCC.\n\nBest regards,\nIMCC Bantu 1-to-1 Admin"
+            body = f"Dear {package_request.user.name},\n\nYour package details status has been updated to: '{new_status}'\nPlease login into your account to accept or reject the package request details suggested by IMCC.\n\nBest regards,\nIMCC Bantu 1-to-1 Admin"
 
             client_email = package_request.user.email
             subject = 'IMCC Bantu 1-to-1 Notifications'
