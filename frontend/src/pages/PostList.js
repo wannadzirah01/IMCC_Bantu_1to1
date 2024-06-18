@@ -40,7 +40,8 @@ const PostList = () => {
         const fetchUserRole = async () => {
             try {
                 const response = await axios.get(
-                    "http://localhost:5000/getUserRole",
+                    // "http://localhost:5000/getUserRole",
+                    "https://imcc-bantu-1to1-2.onrender.com/getUserRole",
                     {
                         withCredentials: true,
                     }
@@ -57,7 +58,8 @@ const PostList = () => {
     useEffect(() => {
         async function fetchUserProfile() {
             try {
-                const resp = await axios.get("http://localhost:5000/@me", {
+                // const resp = await axios.get("http://localhost:5000/@me", {
+                const resp = await axios.get("https://imcc-bantu-1to1-2.onrender.com/@me", {
                     withCredentials: true,
                 });
                 setUserData(resp.data);
@@ -71,7 +73,8 @@ const PostList = () => {
 
     const fetchCategories = () => {
         axios
-            .get("http://localhost:5000/getCategories")
+            .get("https://imcc-bantu-1to1-2.onrender.com/getCategories")
+            //.get("http://localhost:5000/getCategories")
             .then((response) => {
                 setCategories(response.data);
             })
@@ -87,7 +90,8 @@ const PostList = () => {
 
     const fetchPosts = async () => {
         await axios
-            .get("http://localhost:5000/getPosts", {
+            .get("https://imcc-bantu-1to1-2.onrender.com/getPosts", {
+            //.get("http://localhost:5000/getPosts", {
                 withCredentials: true,
                 params: {
                     page: currentPage,
