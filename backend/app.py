@@ -22,7 +22,8 @@ app.config.from_object(ApplicationConfig)
 app.config['UPLOAD_FOLDER'] = 'C:\\Users\\wanna\\IMCC_Bantu_1to1\\upload\\invoice'
 
 bcrypt = Bcrypt(app)
-CORS(app, origins="http://localhost:3000", supports_credentials=True)
+CORS(app, origins="https://imcc-bantu-1to1-2.onrender.com", supports_credentials=True)
+# CORS(app, origins="http://localhost:3000", supports_credentials=True)
 server_session = Session(app)
 db.init_app(app)
 
