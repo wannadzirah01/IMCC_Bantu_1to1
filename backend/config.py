@@ -19,10 +19,18 @@ class ApplicationConfig:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ECHO = True
 
-    SESSION_TYPE = "redis"
+    # SESSION_TYPE = "redis"
+    # SESSION_PERMANENT = False
+    # SESSION_USE_SIGNER = True
+    # # SESSION_REDIS = redis.from_url("redis://127.0.0.1:6379")
+    # SESSION_REDIS = redis.from_url("redis://red-cpom6b6ehbks73em1sqg:6379")
+
+    # Use Redis Labs for session storage
+    REDIS_HOST = 'redis-11351.c295.ap-southeast-1-1.ec2.redns.redis-cloud.com'  # Replace with your Redis Labs host
+    REDIS_PORT = '11351'  # Replace with your Redis Labs port
+    REDIS_PASSWORD = 'N@dz1r@H'  # Replace with your Redis Labs password
+    SESSION_TYPE = 'redis'
     SESSION_PERMANENT = False
     SESSION_USE_SIGNER = True
-    # SESSION_REDIS = redis.from_url("redis://127.0.0.1:6379")
-    SESSION_REDIS = redis.from_url("redis://red-cpom6b6ehbks73em1sqg:6379")
-
+    SESSION_REDIS = redis.StrictRedis(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASSWORD)
     
