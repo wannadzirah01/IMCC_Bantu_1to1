@@ -206,6 +206,81 @@ def get_package_listing():
     return jsonify(package_list)
 
 
+# @app.route('/uploadInvoice', methods=['POST'])
+# @login_required
+# def upload_invoice():
+#     user = current_user
+#     try:
+#         if 'file' not in request.files:
+#             return jsonify({'error': 'No file part'}), 400
+
+#         file = request.files['file']
+
+#         if file.filename == '':
+#             return jsonify({'error': 'No file selected'}), 400
+
+#         filename = secure_filename(file.filename)
+#         file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+#         file.save(file_path)
+
+#         malaysia_timezone = pytz.timezone('Asia/Kuala_Lumpur')
+#         current_time_malaysia = datetime.now(malaysia_timezone)
+
+#         invoice_id = request.form.get('invoice_id')
+
+#         if invoice_id:
+#             existing_invoice = Invoice.query.get(invoice_id)
+#             if not existing_invoice:
+#                 return jsonify({'error': 'Invoice not found'}), 404
+
+#             existing_package_request = PackageRequest.query.filter_by(
+#                 invoice_id=invoice_id).first()
+
+#             existing_invoice.file_name = filename
+#             existing_invoice.file_path = file_path
+#             existing_invoice.file_size = os.path.getsize(file_path)
+#             existing_invoice.invoice_status = "Pending Receipt Approval"
+#             existing_invoice.remarks = ""
+#             existing_package_request.status = "Pending Receipt Approval"
+
+#             db.session.commit()
+
+#             return jsonify({'success': True, 'message': 'File re-uploaded successfully', 'file_name': filename}), 200
+#         else:
+#             package_id = request.form.get('package_id')
+
+#             new_invoice = Invoice(
+#                 file_name=filename,
+#                 file_path=file_path,
+#                 file_size=os.path.getsize(file_path),
+#                 user_id=user.id,
+#                 package_id=package_id,
+#                 invoice_status="Pending Receipt Approval",
+#                 remarks=""
+#             )
+#             db.session.add(new_invoice)
+#             db.session.commit()
+
+#             invoice_id = new_invoice.invoice_id
+
+#             # Create the PackageRequest record with the retrieved invoice_id
+#             new_package_request = PackageRequest(
+#                 package_id=package_id,
+#                 user_id=user.id,
+#                 submitted_at=current_time_malaysia,
+#                 status="Pending Receipt Approval",
+#                 mentor_name="",
+#                 mentor_email="",
+#                 invoice_id=invoice_id
+#             )
+#             db.session.add(new_package_request)
+#             db.session.commit()
+
+#             return jsonify({'success': True, 'message': 'File uploaded successfully', 'file_name': filename}), 201
+#     except Exception as e:
+#         return jsonify({'error': str(e)}), 500
+
+
 @app.route('/uploadInvoice', methods=['POST'])
 @login_required
 def upload_invoice():
@@ -220,8 +295,8 @@ def upload_invoice():
             return jsonify({'error': 'No file selected'}), 400
 
         filename = secure_filename(file.filename)
-        file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        file.save(file_path)
+        blob = bucket.blob(filename)
+        blob.upload_from_file(file)
 
         malaysia_timezone = pytz.timezone('Asia/Kuala_Lumpur')
         current_time_malaysia = datetime.now(malaysia_timezone)
@@ -237,8 +312,8 @@ def upload_invoice():
                 invoice_id=invoice_id).first()
 
             existing_invoice.file_name = filename
-            existing_invoice.file_path = file_path
-            existing_invoice.file_size = os.path.getsize(file_path)
+            existing_invoice.file_path = f"gs://{bucket_name}/{filename}"
+            existing_invoice.file_size = blob.size
             existing_invoice.invoice_status = "Pending Receipt Approval"
             existing_invoice.remarks = ""
             existing_package_request.status = "Pending Receipt Approval"
@@ -251,8 +326,8 @@ def upload_invoice():
 
             new_invoice = Invoice(
                 file_name=filename,
-                file_path=file_path,
-                file_size=os.path.getsize(file_path),
+                file_path=f"gs://{bucket_name}/{filename}",
+                file_size=blob.size,
                 user_id=user.id,
                 package_id=package_id,
                 invoice_status="Pending Receipt Approval",
@@ -263,7 +338,6 @@ def upload_invoice():
 
             invoice_id = new_invoice.invoice_id
 
-            # Create the PackageRequest record with the retrieved invoice_id
             new_package_request = PackageRequest(
                 package_id=package_id,
                 user_id=user.id,
