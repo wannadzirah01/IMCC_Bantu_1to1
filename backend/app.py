@@ -20,6 +20,10 @@ from sqlalchemy.sql import func
 app = Flask(__name__)
 app.config.from_object(ApplicationConfig)
 app.config['UPLOAD_FOLDER'] = 'C:\\Users\\wanna\\IMCC_Bantu_1to1\\upload\\invoice'
+app.config['SESSION_COOKIE_SAMESITE'] = 'None'
+app.config['SESSION_COOKIE_SECURE'] = True  # Ensure the cookie is only sent over HTTPS
+
+Session(app)
 
 bcrypt = Bcrypt(app)
 CORS(app, origins=["https://imcc-bantu-1to1.onrender.com", "https://imcc-bantu-1to1-2.onrender.com"], supports_credentials=True)
