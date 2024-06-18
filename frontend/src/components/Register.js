@@ -17,7 +17,8 @@ const Register = (props) => {
         event.preventDefault();
         try {
             await axios.post(
-                "http://localhost:5000/register",
+                // "http://localhost:5000/register",
+                "https://imcc-bantu-1to1-2.onrender.com/register",
                 // { email, password, name, matricNumber, phoneNumber, school, yearOfStudy});
                 { email, password, name, phoneNumber }
             );
