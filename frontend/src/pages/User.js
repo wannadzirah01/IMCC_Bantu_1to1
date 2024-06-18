@@ -24,7 +24,7 @@ const User = () => {
     useEffect(() => {
         async function fetchUserProfile() {
             try {
-                const resp = await axios.get("//localhost:5000/@me");
+                const resp = await axios.get("https://imcc-bantu-1to1.onrender.com/@me");
                 setUserData(resp.data);
             } catch (error) {
                 console.log("Not authenticated");

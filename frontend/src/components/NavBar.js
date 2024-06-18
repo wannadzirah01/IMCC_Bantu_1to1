@@ -6,9 +6,9 @@ function NavBar({ userRole, setUserRole }) {
 
   const handleLogout = async () => {
     try {
-      await axios.post("http://localhost:5000/logout", {}, { withCredentials: true });
+      await axios.post("https://imcc-bantu-1to1.onrender.com/logout", {}, { withCredentials: true });
       setUserRole('');
-      navigate("/");
+      navigate("https://imcc-bantu-1to1.onrender.com/");
     } catch (error) {
       console.error('Error during logout:', error);
     }

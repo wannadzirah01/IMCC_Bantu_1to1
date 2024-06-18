@@ -20,7 +20,7 @@ const App = () => {
   useEffect(() => {
     const fetchUserRole = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/getUserRole', { withCredentials: true });
+        const response = await axios.get('https://imcc-bantu-1to1.onrender.com/getUserRole', { withCredentials: true });
         setUserRole(response.data.role);
       } catch (error) {
         console.error('Error fetching user role:', error);
