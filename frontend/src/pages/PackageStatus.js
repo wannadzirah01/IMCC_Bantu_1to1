@@ -521,6 +521,7 @@ const PackageStatus = () => {
             alert("Your complaint has been successfully submitted.");
             setShowComplaintFormModal(false);
             setComplaintDetails("");
+            fetchTickets();
         } catch (error) {
             console.error("Error submitting complaint details:", error);
         }
@@ -575,6 +576,8 @@ const PackageStatus = () => {
             setComplaintStatus(newComplaintStatus);
             setShowComplaintModal(false);
             alert("Complaint status updated successfully.");
+            fetchTickets();
+            setNewComplaintStatus(null);
         } catch (error) {
             console.error("Error updating complaint status:", error);
             alert("Error updating complaint status.");
@@ -751,7 +754,7 @@ const PackageStatus = () => {
                                                             )
                                                         }
                                                     >
-                                                        Yes
+                                                        Yes. Click here to view the submitted complaint.
                                                     </a>
                                                 ) : (
                                                     "No"
@@ -1362,7 +1365,7 @@ const PackageStatus = () => {
                     </p>
                     <p>
                         <b>Created:</b>{" "}
-                        {new Date(complaintCreated).toLocaleString()}
+                        {complaintCreated}
                     </p>
                 </Modal.Body>
                 <Modal.Footer>

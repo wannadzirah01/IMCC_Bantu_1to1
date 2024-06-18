@@ -304,47 +304,6 @@ def get_user_tickets():
     return jsonify(ticket_list)
 
 
-# @app.route('/getAllTickets', methods=['GET'])
-# @login_required
-# @admin_required
-# def get_all_tickets():
-#     page = int(request.args.get('page', 1))
-#     limit = int(request.args.get('limit', 10))
-#     offset = (page - 1) * limit
-
-#     tickets = PackageRequest.query.order_by(
-#         PackageRequest.submitted_at.desc()).offset(offset).limit(limit).all()
-#     total_tickets = PackageRequest.query.count()
-#     if not tickets:
-#         return jsonify({"message": "No tickets"}), 200
-
-#     ticket_list = []
-#     for ticket in tickets:
-#         malaysia_time = ticket.submitted_at.astimezone(
-#             timezone('Asia/Kuala_Lumpur'))
-
-#         # Fetch details for the current ticket
-#         details = RequestDetail.query.filter_by(
-#             request_id=ticket.request_id).all()
-
-#         ticket_list.append({
-#             "invoice_status": ticket.invoice.invoice_status,
-#             "package": ticket.package.title,
-#             "user_name": ticket.user.name,
-#             "uploaded_datetime": malaysia_time.strftime('%Y-%m-%d %H:%M:%S'),
-#             "file_name": ticket.invoice.file_name,
-#             # "matric_number": ticket.user.matric_number,
-#             "email": ticket.user.email,
-#             "invoice_id": ticket.invoice.invoice_id,
-#             "remarks": ticket.invoice.remarks,
-#             "package_request_status": ticket.status,
-#             "package_request_id": ticket.request_id,
-#             "details": [{"detail_name": detail.detail.detail_name, "detail_type": detail.detail.detail_type, "value": detail.value} for detail in details]
-#         })
-
-#     return jsonify({'ticket_list': ticket_list, 'total_tickets': total_tickets})
-
-
 @app.route('/getAllTickets', methods=['GET'])
 @login_required
 @admin_required
@@ -352,7 +311,8 @@ def get_all_tickets():
     page = int(request.args.get('page', 1))
     limit = int(request.args.get('limit', 10))
     offset = (page - 1) * limit
-    status_filter = request.args.getlist('status')  # Get the status filter from the query parameters
+    # Get the status filter from the query parameters
+    status_filter = request.args.getlist('status')
 
     # Mapping frontend status categories to database statuses
     status_mapping = {
@@ -374,22 +334,26 @@ def get_all_tickets():
         db_statuses = []
         for status in status_filter:
             db_statuses.extend(status_mapping.get(status, []))
-        query = PackageRequest.query.filter(PackageRequest.status.in_(db_statuses))
+        query = PackageRequest.query.filter(
+            PackageRequest.status.in_(db_statuses))
     else:
         query = PackageRequest.query
 
     total_tickets = query.count()
-    tickets = query.order_by(PackageRequest.submitted_at.desc()).offset(offset).limit(limit).all()
+    tickets = query.order_by(PackageRequest.submitted_at.desc()).offset(
+        offset).limit(limit).all()
 
     if not tickets:
         return jsonify({"message": "No tickets"}), 200
 
     ticket_list = []
     for ticket in tickets:
-        malaysia_time = ticket.submitted_at.astimezone(timezone('Asia/Kuala_Lumpur'))
+        malaysia_time = ticket.submitted_at.astimezone(
+            timezone('Asia/Kuala_Lumpur'))
 
         # Fetch details for the current ticket
-        details = RequestDetail.query.filter_by(request_id=ticket.request_id).all()
+        details = RequestDetail.query.filter_by(
+            request_id=ticket.request_id).all()
 
         ticket_list.append({
             "invoice_status": ticket.invoice.invoice_status,
@@ -434,7 +398,8 @@ def get_ticket_counts():
     # Get the counts for each status category
     status_counts = {key: 0 for key in status_mapping.keys()}
     for category, statuses in status_mapping.items():
-        status_counts[category] = PackageRequest.query.filter(PackageRequest.status.in_(statuses)).count()
+        status_counts[category] = PackageRequest.query.filter(
+            PackageRequest.status.in_(statuses)).count()
 
     return jsonify({
         'total_tickets': total_tickets,
@@ -511,90 +476,91 @@ def get_package_details(invoice_id):
     return jsonify({"package_details": details})
 
 
-# @app.route('/submitPackageRequest', methods=['POST'])
-# @login_required
-# def submit_package_request():
-#     data = request.get_json()
-#     package_request_id = data.get('package_request_id')
-#     details = data.get('details', [])
-
-#     package_request = PackageRequest.query.filter_by(
-#         invoice_id=package_request_id).first()
-#     if not package_request:
-#         return jsonify({"error": "Package request not found"}), 404
-
-#     # if package_request.status == 'Pending Package Details Approval':
-#     #     return jsonify({"error": "Package request has already been submitted"}), 400
-
-#     package_request.status = 'Pending Package Details Approval'
-#     db.session.add(package_request)
-#     db.session.commit()
-
-#     for detail in details:
-#         detail_name = detail.get('detail_name')
-#         detail_value = detail.get('value')
-#         detail_entry = Detail.query.filter_by(detail_name=detail_name).first()
-#         if detail_entry:
-#             request_detail = RequestDetail(
-#                 request_id=package_request.request_id,
-#                 detail_id=detail_entry.detail_id,
-#                 value=detail_value
-#             )
-#             db.session.add(request_detail)
-
-#     db.session.commit()
-#     return jsonify({"message": "Package request submitted successfully", "package_request": package_request.request_id}), 201
-
 @app.route('/submitPackageRequest', methods=['POST'])
 @login_required
 def submit_package_request():
-    try:
-        data = request.get_json()
-        package_request_id = data.get('package_request_id')
-        details = data.get('details', [])
+    data = request.get_json()
+    package_request_id = data.get('package_request_id')
+    details = data.get('details', [])
 
-        package_request = PackageRequest.query.filter_by(
-            invoice_id=package_request_id).first()
-        if not package_request:
-            response = make_response(
-                jsonify({"error": "Package request not found"}), 404)
-            response.headers.add(
-                "Access-Control-Allow-Origin", "http://localhost:3000")
-            response.headers.add("Access-Control-Allow-Credentials", "true")
-            return response
+    package_request = PackageRequest.query.filter_by(
+        invoice_id=package_request_id).first()
+    if not package_request:
+        return jsonify({"error": "Package request not found"}), 404
 
-        package_request.status = 'Pending Package Details Approval'
-        db.session.add(package_request)
-        db.session.commit()
+    # if package_request.status == 'Pending Package Details Approval':
+    #     return jsonify({"error": "Package request has already been submitted"}), 400
 
-        for detail in details:
-            detail_name = detail.get('detail_name')
-            detail_value = detail.get('value')
-            detail_entry = Detail.query.filter_by(
-                detail_name=detail_name).first()
-            if detail_entry:
-                request_detail = RequestDetail(
-                    request_id=package_request.request_id,
-                    detail_id=detail_entry.detail_id,
-                    value=detail_value
-                )
-                db.session.add(request_detail)
+    package_request.status = 'Pending Package Details Approval'
+    db.session.add(package_request)
+    db.session.commit()
 
-        db.session.commit()
+    for detail in details:
+        detail_name = detail.get('detail_name')
+        detail_value = detail.get('value')
+        detail_entry = Detail.query.filter_by(detail_name=detail_name).first()
+        if detail_entry:
+            request_detail = RequestDetail(
+                request_id=package_request.request_id,
+                detail_id=detail_entry.detail_id,
+                value=detail_value
+            )
+            db.session.add(request_detail)
 
-        response = make_response(jsonify(
-            {"message": "Package request submitted successfully", "package_request": package_request.request_id}), 201)
-        response.headers.add("Access-Control-Allow-Origin",
-                             "http://localhost:3000")
-        response.headers.add("Access-Control-Allow-Credentials", "true")
-        return response
-    except Exception as e:
-        db.session.rollback()
-        response = make_response(jsonify({"error": str(e)}), 500)
-        response.headers.add("Access-Control-Allow-Origin",
-                             "http://localhost:3000")
-        response.headers.add("Access-Control-Allow-Credentials", "true")
-        return response
+    db.session.commit()
+    return jsonify({"message": "Package request submitted successfully", "package_request": package_request.request_id}), 201
+
+
+# @app.route('/submitPackageRequest', methods=['POST'])
+# @login_required
+# def submit_package_request():
+#     try:
+#         data = request.get_json()
+#         package_request_id = data.get('package_request_id')
+#         details = data.get('details', [])
+
+#         package_request = PackageRequest.query.filter_by(
+#             invoice_id=package_request_id).first()
+#         if not package_request:
+#             response = make_response(
+#                 jsonify({"error": "Package request not found"}), 404)
+#             response.headers.add(
+#                 "Access-Control-Allow-Origin", "http://localhost:3000")
+#             response.headers.add("Access-Control-Allow-Credentials", "true")
+#             return response
+
+#         package_request.status = 'Pending Package Details Approval'
+#         db.session.add(package_request)
+#         db.session.commit()
+
+#         for detail in details:
+#             detail_name = detail.get('detail_name')
+#             detail_value = detail.get('value')
+#             detail_entry = Detail.query.filter_by(
+#                 detail_name=detail_name).first()
+#             if detail_entry:
+#                 request_detail = RequestDetail(
+#                     request_id=package_request.request_id,
+#                     detail_id=detail_entry.detail_id,
+#                     value=detail_value
+#                 )
+#                 db.session.add(request_detail)
+
+#         db.session.commit()
+
+#         response = make_response(jsonify(
+#             {"message": "Package request submitted successfully", "package_request": package_request.request_id}), 201)
+#         response.headers.add("Access-Control-Allow-Origin",
+#                              "http://localhost:3000")
+#         response.headers.add("Access-Control-Allow-Credentials", "true")
+#         return response
+#     except Exception as e:
+#         db.session.rollback()
+#         response = make_response(jsonify({"error": str(e)}), 500)
+#         response.headers.add("Access-Control-Allow-Origin",
+#                              "http://localhost:3000")
+#         response.headers.add("Access-Control-Allow-Credentials", "true")
+#         return response
 
 
 @app.route('/getPackageRequest/<int:request_id>', methods=['GET'])
@@ -629,7 +595,8 @@ def get_package_request(request_id):
         "status": package_request.status,
         "details": details,
         "mentor_name": mentor_name,
-        "mentor_email": mentor_email
+        "mentor_email": mentor_email,
+        "has_complaint": package_request.has_complaint
     }
 
     return jsonify(response), 200
@@ -687,40 +654,12 @@ def get_all_package_requests():
         })
     return jsonify(result)
 
-
-# @app.route('/updatePackageRequestStatus', methods=['POST'])
-# @login_required
-# def update_package_request_status():
-#     # response = make_response()
-#     # response.headers.add("Access-Control-Allow-Origin", "http://localhost:3000")
-#     # response.headers.add("Access-Control-Allow-Credentials", "true")
-#     data = request.get_json()
-#     request_id = data.get('request_id')
-#     new_status = data.get('status')
-
-#     package_request = PackageRequest.query.get(request_id)
-#     if not package_request:
-#         return jsonify({"message": "Package request not found"}), 404
-
-#     package_request.status = new_status
-#     db.session.commit()
-
-#     if current_user.discriminator == "admin":
-#         body = f"Dear {package_request.user.name},\n\nYour package details status has been updated to: '{
-#             new_status}'\nPlease login into your account to view the subscribed Bantu 1-to-1 pakckage details.\n\nBest regards,\nIMCC Bantu 1-to-1 Admin"
-
-#     client_email = package_request.user.email
-#     subject = 'IMCC Bantu 1-to-1 Notifications'
-
-#     msg = Message(subject, recipients=[client_email])
-#     msg.body = body
-#     mail.send(msg)
-
-#     return jsonify({"message": "Package request status updated successfully"}), 200
-
 @app.route('/updatePackageRequestStatus', methods=['POST'])
 @login_required
 def update_package_request_status():
+    # response = make_response()
+    # response.headers.add("Access-Control-Allow-Origin", "http://localhost:3000")
+    # response.headers.add("Access-Control-Allow-Credentials", "true")
     data = request.get_json()
     request_id = data.get('request_id')
     new_status = data.get('status')
@@ -734,22 +673,50 @@ def update_package_request_status():
 
     if current_user.discriminator == "admin":
         body = f"Dear {package_request.user.name},\n\nYour package details status has been updated to: '{
-            new_status}'\nPlease login into your account to view the subscribed Bantu 1-to-1 package details.\n\nBest regards,\nIMCC Bantu 1-to-1 Admin"
+            new_status}'\nPlease login into your account to view the subscribed Bantu 1-to-1 pakckage details.\n\nBest regards,\nIMCC Bantu 1-to-1 Admin"
 
-        client_email = package_request.user.email
-        subject = 'IMCC Bantu 1-to-1 Notifications'
+    client_email = package_request.user.email
+    subject = 'IMCC Bantu 1-to-1 Notifications'
 
-        msg = Message(subject, recipients=[client_email])
-        msg.body = body
-        mail.send(msg)
+    msg = Message(subject, recipients=[client_email])
+    msg.body = body
+    mail.send(msg)
 
-    response = jsonify(
-        {"message": "Package request status updated successfully"})
-    response.headers.add("Access-Control-Allow-Origin",
-                         "http://localhost:3000")
-    response.headers.add("Access-Control-Allow-Credentials", "true")
+    return jsonify({"message": "Package request status updated successfully"}), 200
 
-    return response, 200
+
+# @app.route('/updatePackageRequestStatus', methods=['POST'])
+# @login_required
+# def update_package_request_status():
+#     data = request.get_json()
+#     request_id = data.get('request_id')
+#     new_status = data.get('status')
+
+#     package_request = PackageRequest.query.get(request_id)
+#     if not package_request:
+#         return jsonify({"message": "Package request not found"}), 404
+
+#     package_request.status = new_status
+#     db.session.commit()
+
+#     if current_user.discriminator == "admin":
+#         body = f"Dear {package_request.user.name},\n\nYour package details status has been updated to: '{
+#             new_status}'\nPlease login into your account to view the subscribed Bantu 1-to-1 package details.\n\nBest regards,\nIMCC Bantu 1-to-1 Admin"
+
+#         client_email = package_request.user.email
+#         subject = 'IMCC Bantu 1-to-1 Notifications'
+
+#         msg = Message(subject, recipients=[client_email])
+#         msg.body = body
+#         mail.send(msg)
+
+#     response = jsonify(
+#         {"message": "Package request status updated successfully"})
+#     response.headers.add("Access-Control-Allow-Origin",
+#                          "http://localhost:3000")
+#     response.headers.add("Access-Control-Allow-Credentials", "true")
+
+#     return response, 200
 
 
 @app.route('/submitOrUpdatePackageRequest', methods=['POST'])
@@ -883,19 +850,21 @@ def get_user_complaints():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+
 @app.route('/get_complaint/<int:request_id>', methods=['GET'])
 # @login_required
 def get_complaint(request_id):
     complaint = Complaint.query.filter_by(request_id=request_id).first()
-    
+
     if not complaint:
         return jsonify({"error": "No complaint found for this package request"}), 404
-    
+
     return jsonify({
         "complaint_detail": complaint.complaint_detail,
         "complaint_status": complaint.complaint_status,
         "complaint_created": complaint.complaint_created
     })
+
 
 @app.route('/addComplaints', methods=['POST'])
 @login_required
@@ -908,7 +877,7 @@ def add_complaints():
         invoice_id=package_request_id).first()
     if not package_request:
         return jsonify({"error": "Package request not found"}), 404
-    
+
     request_id = package_request.request_id
 
     package_request.has_complaint = True
@@ -937,51 +906,28 @@ def add_complaints():
 
     return jsonify(complaint_data), 200
 
+
 @app.route('/api/update_complaint_status/<int:request_id>', methods=['POST'])
 def update_complaint_status(request_id):
     complaint = Complaint.query.filter_by(request_id=request_id).first()
-    
+
     if not complaint:
         return jsonify({"error": "No complaint found for this package request"}), 404
-    
+
     new_status = request.json.get('complaint_status')
-    
+
     if new_status not in ['Not Resolved Yet', 'Resolved']:
         return jsonify({"error": "Invalid status"}), 400
-    
+
     complaint.complaint_status = new_status
 
     ticket = PackageRequest.query.filter_by(request_id=request_id).first()
     ticket.has_complaint = False
 
     db.session.commit()
-    
+
     return jsonify({"message": "Complaint status updated successfully"})
 
-# @app.route('/getPosts', methods=['GET'])
-# def get_posts():
-#     try:
-#         page = int(request.args.get('page', 1))
-#         limit = int(request.args.get('limit', 5))
-#         offset = (page - 1) * limit
-
-#         # Query the posts with pagination
-#         posts = Post.query.order_by(Post.created_at.desc()).offset(
-#             offset).limit(limit).all()
-#         total_posts = Post.query.count()
-
-#         posts_data = [{
-#             'post_id': post.post_id,
-#             'title': post.title,
-#             'content': post.content,
-#             'category': post.category.name,
-#             'user': post.user.name,
-#             'total_likes': post.total_likes()
-#         } for post in posts]
-
-#         return jsonify({'posts': posts_data, 'totalPosts': total_posts}), 200
-#     except Exception as e:
-#         return jsonify({'error': str(e)}), 500
 
 @app.route('/getPosts', methods=['GET'])
 def get_posts():
@@ -1233,13 +1179,15 @@ def delete_reply(reply_id):
         return jsonify({'message': 'Reply deleted successfully'}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-    
+
 
 @app.route('/popularPosts', methods=['GET'])
 def popular_posts():
     try:
-        top_n = int(request.args.get('top', 10))  # Number of top posts to retrieve
-        popular_posts = Post.query.outerjoin(Like).group_by(Post.post_id).order_by(db.func.count(Like.id).desc()).limit(top_n).all()
+        # Number of top posts to retrieve
+        top_n = int(request.args.get('top', 10))
+        popular_posts = Post.query.outerjoin(Like).group_by(Post.post_id).order_by(
+            db.func.count(Like.id).desc()).limit(top_n).all()
         posts_data = [{
             'post_id': post.post_id,
             'title': post.title,
@@ -1249,7 +1197,7 @@ def popular_posts():
         return jsonify({'popular_posts': posts_data}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-    
+
 
 @app.route('/categoryPopularity', methods=['GET'])
 def category_popularity():
@@ -1258,7 +1206,8 @@ def category_popularity():
             Category.name, db.func.count(Post.post_id)
         ).join(Post).group_by(Category.name).all()
 
-        categories = [{'category': name, 'post_count': count} for name, count in category_data]
+        categories = [{'category': name, 'post_count': count}
+                      for name, count in category_data]
         return jsonify({'category_popularity': categories}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -1271,11 +1220,12 @@ def revenue_analysis():
             Package.title, db.func.sum(Invoice.package.price)
         ).join(Invoice).group_by(Package.title).all()
 
-        revenue = [{'package': title, 'total_revenue': revenue} for title, revenue in revenue_data]
+        revenue = [{'package': title, 'total_revenue': revenue}
+                   for title, revenue in revenue_data]
         return jsonify({'revenue_analysis': revenue}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-    
+
 
 @app.route('/postsByDate', methods=['GET'])
 def posts_by_date():
@@ -1292,50 +1242,25 @@ def posts_by_date():
             func.count(Post.post_id).label('post_count')
         ).group_by(func.date_format(Post.created_at, '%Y-%m')).all()
 
-        posts_by_day_data = [{'date': str(day[0]), 'post_count': day[1]} for day in posts_by_day]
-        posts_by_month_data = [{'month': month[0], 'post_count': month[1]} for month in posts_by_month]
+        posts_by_day_data = [
+            {'date': str(day[0]), 'post_count': day[1]} for day in posts_by_day]
+        posts_by_month_data = [
+            {'month': month[0], 'post_count': month[1]} for month in posts_by_month]
 
         return jsonify({'posts_by_day': posts_by_day_data, 'posts_by_month': posts_by_month_data}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
 
-
-# @app.route('/admin_dashboard')
-# def admin_dashboard():
-#     # Query to get the count of package requests for each package
-#     package_requests_count = db.session.query(Package.title, db.func.count(
-#         PackageRequest.request_id)).join(PackageRequest).group_by(Package.title).all()
-
-#     # Extract package titles and request counts
-#     package_titles = [row[0] for row in package_requests_count]
-#     request_counts = [row[1] for row in package_requests_count]
-
-#     # Create a Plotly bar chart
-#     bar_chart = go.Figure(data=[go.Bar(x=package_titles, y=request_counts)])
-
-#     # Configure the layout of the chart
-#     bar_chart.update_layout(
-#         title='Bantu 1-to-1 Package Statistics',
-#         xaxis=dict(title='Bantu 1-to-1 Package'),
-#         yaxis=dict(title='Number of Purchase')
-#     )
-
-#     # Convert the Plotly chart to JSON
-#     bar_chart_json = bar_chart.to_json()
-
-#     # Returning a JSON response
-#     return jsonify(bar_chart_json=bar_chart_json)
-
-
 @app.route('/package_requests_count', methods=['GET'])
 def get_package_requests_count():
     package_requests_count = db.session.query(
-        Package.title, 
+        Package.title,
         db.func.count(PackageRequest.request_id).label('request_count')
     ).join(PackageRequest).group_by(Package.title).all()
 
-    results = [{'title': title, 'request_count': request_count} for title, request_count in package_requests_count]
+    results = [{'title': title, 'request_count': request_count}
+               for title, request_count in package_requests_count]
     return jsonify(results)
 
 

@@ -26,7 +26,7 @@ function NavBar({ userRole, setUserRole }) {
         {userRole == "client" && (
           <CustomLink to="/packageListing">Bantu Packages</CustomLink>
         )}
-        <CustomLink to="/ticketManagement">Service Status</CustomLink>
+        <CustomLink to="/ticketManagement">Ticket Status</CustomLink>
         {/* <CustomLink to="/complaintStatus">Complaint Status</CustomLink> */}
         {userRole == "admin" && (
           <CustomLink to="/dashboard">Dashboard</CustomLink>

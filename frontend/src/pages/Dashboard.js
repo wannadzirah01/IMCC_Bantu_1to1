@@ -196,7 +196,7 @@ const Dashboard = () => {
             <h2>Admin Dashboard</h2>
             <div>
                 <div className="chart-box">
-                    <h3>Package Requests Count</h3>
+                    <h3>Tickets Count</h3>
                     <ResponsiveContainer width="100%" height={400}>
                         <BarChart data={packageRequests}>
                             <CartesianGrid strokeDasharray="3 3" />
