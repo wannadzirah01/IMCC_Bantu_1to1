@@ -16,6 +16,7 @@ from flask import request, jsonify
 import pytz
 import plotly.graph_objs as go
 from sqlalchemy.sql import func
+from google.cloud import storage
 
 app = Flask(__name__)
 app.config.from_object(ApplicationConfig)
@@ -37,6 +38,17 @@ with app.app_context():
 login_manager = LoginManager()
 login_manager.init_app(app)
 
+
+# Use environment variable for credentials
+google_credentials_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+if google_credentials_path:
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = google_credentials_path
+else:
+    raise EnvironmentError("The GOOGLE_APPLICATION_CREDENTIALS environment variable is not set.")
+
+storage_client = storage.Client()
+bucket_name = 'bucket-imcc-bantu'
+bucket = storage_client.bucket(bucket_name)
 
 def admin_required(f):
     @wraps(f)
