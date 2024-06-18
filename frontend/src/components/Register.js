@@ -24,7 +24,7 @@ const Register = (props) => {
             );
             alert("Successful user registration");
 
-            navigate("https://imcc-bantu-1to1.onrender.com/");
+            navigate("/");
         } catch (err) {
             if (err.response && err.response.status === 400) {
                 alert("User already exist. Please Login");

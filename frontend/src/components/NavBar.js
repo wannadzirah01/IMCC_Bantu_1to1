@@ -8,7 +8,7 @@ function NavBar({ userRole, setUserRole }) {
     try {
       await axios.post("https://imcc-bantu-1to1.onrender.com/logout", {}, { withCredentials: true });
       setUserRole('');
-      navigate("https://imcc-bantu-1to1.onrender.com/");
+      navigate("/");
     } catch (error) {
       console.error('Error during logout:', error);
     }

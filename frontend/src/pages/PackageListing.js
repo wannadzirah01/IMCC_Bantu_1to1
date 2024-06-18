@@ -71,7 +71,7 @@ function PackageList() {
             });
 
             alert("Receipt uploaded successfully");
-            navigate("https://imcc-bantu-1to1.onrender.com/ticketManagement");
+            navigate("/ticketManagement");
         } catch (error) {
             console.error("Error uploading file:", error);
             setError(

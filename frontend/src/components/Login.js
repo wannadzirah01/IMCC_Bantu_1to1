@@ -27,9 +27,9 @@ const Login = ({ setUserRole }) => {
             setUserRole(userRoleResponse.data.role);
 
             if (userRoleResponse.data.role === "client") {
-                navigate("https://imcc-bantu-1to1.onrender.com/packageListing");
+                navigate("/packageListing");
             } else if (userRoleResponse.data.role === "admin") {
-                navigate("https://imcc-bantu-1to1.onrender.com/ticketManagement");
+                navigate("/ticketManagement");
             }
         } catch (err) {
             if (err.response && err.response.status === 401) {
