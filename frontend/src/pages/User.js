@@ -9,7 +9,7 @@ const User = () => {
         const fetchUserRole = async () => {
             try {
                 const response = await axios.get(
-                    "http://localhost:5000/getUserRole",
+                    "https://imcc-bantu-1to1.onrender.com/getUserRole",
                     { withCredentials: true }
                 );
                 setUserRole(response.data.role);

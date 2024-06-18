@@ -116,7 +116,7 @@ const PostList = () => {
     const fetchLikeStatus = async (postId) => {
         try {
             const response = await axios.get(
-                `http://localhost:5000/getLikeStatus/${postId}`,
+                `https://imcc-bantu-1to1.onrender.com/getLikeStatus/${postId}`,
                 { withCredentials: true }
             );
             setLikes((prevLikes) => ({
@@ -178,7 +178,7 @@ const PostList = () => {
                 // If editingPost is not null, update the existing post
                 axios
                     .put(
-                        `http://localhost:5000/editPost/${editingPost.post_id}`,
+                        `https://imcc-bantu-1to1.onrender.com/editPost/${editingPost.post_id}`,
                         postData,
                         {
                             withCredentials: true,
@@ -200,7 +200,7 @@ const PostList = () => {
             } else {
                 // If editingPost is null, create a new post
                 axios
-                    .post("http://localhost:5000/createPost", postData, {
+                    .post("https://imcc-bantu-1to1.onrender.com/createPost", postData, {
                         withCredentials: true,
                     })
                     .then((response) => {
@@ -232,7 +232,7 @@ const PostList = () => {
 
     const handleDeletePost = (post_id) => {
         axios
-            .delete(`http://localhost:5000/deletePost/${post_id}`, {
+            .delete(`https://imcc-bantu-1to1.onrender.com/deletePost/${post_id}`, {
                 withCredentials: true,
             })
             .then(() => {
@@ -252,7 +252,7 @@ const PostList = () => {
             setLoading(true);
             axios
                 .post(
-                    "http://localhost:5000/createReply",
+                    "https://imcc-bantu-1to1.onrender.com/createReply",
                     {
                         content: replyContent,
                         post_id: postId,
@@ -288,7 +288,7 @@ const PostList = () => {
 
     const fetchReplies = (postId) => {
         axios
-            .get(`http://localhost:5000/getReplies/${postId}`)
+            .get(`https://imcc-bantu-1to1.onrender.com/getReplies/${postId}`)
             .then((response) => {
                 setPosts(
                     posts.map((post) =>
@@ -308,7 +308,7 @@ const PostList = () => {
 
     const handleDeleteReply = (reply_id) => {
         axios
-            .delete(`http://localhost:5000/deleteReply/${reply_id}`, {
+            .delete(`https://imcc-bantu-1to1.onrender.com/deleteReply/${reply_id}`, {
                 withCredentials: true,
             })
             .then(() => {
@@ -360,7 +360,7 @@ const PostList = () => {
     const handleLike = async (postId) => {
         try {
             const response = await axios.post(
-                `http://localhost:5000/likePost/${postId}`,
+                `https://imcc-bantu-1to1.onrender.com/likePost/${postId}`,
                 {}, // Empty body
                 { withCredentials: true }
             );

@@ -41,7 +41,7 @@ const Dashboard = () => {
         const fetchPackageRequests = async () => {
             try {
                 const response = await axios.get(
-                    "http://localhost:5000/package_requests_count"
+                    "https://imcc-bantu-1to1.onrender.com/package_requests_count"
                 );
                 setPackageRequests(response.data);
             } catch (error) {
@@ -56,7 +56,7 @@ const Dashboard = () => {
         const fetchChartData = async () => {
             try {
                 const response = await axios.get(
-                    "http://localhost:5000/admin_dashboard",
+                    "https://imcc-bantu-1to1.onrender.com/admin_dashboard",
                     { withCredentials: true }
                 );
                 setBarChartData(JSON.parse(response.data.bar_chart_json));
@@ -107,7 +107,7 @@ const Dashboard = () => {
         const fetchData = async () => {
             try {
                 const response = await axios.get(
-                    "http://localhost:5000/getTicketCounts",
+                    "https://imcc-bantu-1to1.onrender.com/getTicketCounts",
                     { withCredentials: true }
                 );
                 setCounts(response.data.status_counts);
@@ -164,7 +164,7 @@ const Dashboard = () => {
         const fetchCategoryPopularity = async () => {
             try {
                 const response = await axios.get(
-                    "http://localhost:5000/categoryPopularity"
+                    "https://imcc-bantu-1to1.onrender.com/categoryPopularity"
                 );
                 setCategories(response.data.category_popularity);
             } catch (error) {
@@ -179,7 +179,7 @@ const Dashboard = () => {
         const fetchPostsByDate = async () => {
             try {
                 const response = await axios.get(
-                    "http://localhost:5000/postsByDate"
+                    "https://imcc-bantu-1to1.onrender.com/postsByDate"
                 );
                 setPostsByDay(response.data.posts_by_day);
                 setPostsByMonth(response.data.posts_by_month);

@@ -40,7 +40,7 @@ const PackageStatus = () => {
         const fetchUserRole = async () => {
             try {
                 const response = await axios.get(
-                    "http://localhost:5000/getUserRole",
+                    "https://imcc-bantu-1to1.onrender.com/getUserRole",
                     {
                         withCredentials: true,
                     }
@@ -75,7 +75,7 @@ const PackageStatus = () => {
 
             if (userRole === "admin") {
                 response = await axios.get(
-                    "http://localhost:5000/getAllTickets",
+                    "https://imcc-bantu-1to1.onrender.com/getAllTickets",
                     {
                         withCredentials: true,
                         params: params,
@@ -83,7 +83,7 @@ const PackageStatus = () => {
                 );
             } else if (userRole === "client") {
                 response = await axios.get(
-                    "http://localhost:5000/getUserTickets",
+                    "https://imcc-bantu-1to1.onrender.com/getUserTickets",
                     { withCredentials: true }
                 );
             } else {
@@ -126,7 +126,7 @@ const PackageStatus = () => {
     };
 
     const handleViewFile = (filename) => {
-        const fileUrl = `http://localhost:5000/viewInvoiceFile/${filename}`;
+        const fileUrl = `https://imcc-bantu-1to1.onrender.com/viewInvoiceFile/${filename}`;
         window.open(fileUrl, "_blank");
     };
 
@@ -146,7 +146,7 @@ const PackageStatus = () => {
 
         try {
             const response = await axios.post(
-                "http://localhost:5000/uploadInvoice",
+                "https://imcc-bantu-1to1.onrender.com/uploadInvoice",
                 formData,
                 {
                     withCredentials: true,
@@ -191,7 +191,7 @@ const PackageStatus = () => {
         if (!expandedInvoices[invoiceId]) {
             try {
                 const response = await axios.get(
-                    `http://localhost:5000/getPackageRequest/${packageRequestId}`,
+                    `https://imcc-bantu-1to1.onrender.com/getPackageRequest/${packageRequestId}`,
                     { withCredentials: true }
                 );
 
@@ -259,7 +259,7 @@ const PackageStatus = () => {
             }
 
             const response = await axios.post(
-                "http://localhost:5000/updateInvoiceStatus",
+                "https://imcc-bantu-1to1.onrender.com/updateInvoiceStatus",
                 data,
                 { withCredentials: true }
             );
@@ -289,7 +289,7 @@ const PackageStatus = () => {
 
         try {
             const response = await axios.get(
-                `http://localhost:5000/getPackageDetails/${invoice_id}`,
+                `https://imcc-bantu-1to1.onrender.com/getPackageDetails/${invoice_id}`,
                 { withCredentials: true }
             );
             setPackageDetailsList(response.data.package_details);
@@ -320,7 +320,7 @@ const PackageStatus = () => {
                 details: packageDetailsList,
             };
             const response = await axios.post(
-                "http://localhost:5000/submitPackageRequest",
+                "https://imcc-bantu-1to1.onrender.com/submitPackageRequest",
                 data,
                 { withCredentials: true }
             );
@@ -365,7 +365,7 @@ const PackageStatus = () => {
                 }
 
                 await axios.post(
-                    "http://localhost:5000/submitOrUpdatePackageRequest",
+                    "https://imcc-bantu-1to1.onrender.com/submitOrUpdatePackageRequest",
                     {
                         package_request_id: ticketId,
                         status: updatedStatus,
@@ -390,7 +390,7 @@ const PackageStatus = () => {
                 );
             } else {
                 response = await axios.post(
-                    "http://localhost:5000/updatePackageRequestStatus",
+                    "https://imcc-bantu-1to1.onrender.com/updatePackageRequestStatus",
                     data,
                     { withCredentials: true }
                 );
@@ -427,7 +427,7 @@ const PackageStatus = () => {
                 status: "Completed",
             };
             const response = await axios.post(
-                "http://localhost:5000/updatePackageRequestStatus",
+                "https://imcc-bantu-1to1.onrender.com/updatePackageRequestStatus",
                 data,
                 { withCredentials: true }
             );
@@ -511,7 +511,7 @@ const PackageStatus = () => {
     const handleSubmitComplaint = (complaintticketId, complaintDetails) => {
         try {
             axios.post(
-                "http://localhost:5000/addComplaints",
+                "https://imcc-bantu-1to1.onrender.com/addComplaints",
                 {
                     packageRequestId: complaintticketId,
                     complaintDetails: complaintDetails,
@@ -539,7 +539,7 @@ const PackageStatus = () => {
         setShowComplaintModal(true);
         try {
             const response = await axios.get(
-                `http://localhost:5000/get_complaint/${requestId}`,
+                `https://imcc-bantu-1to1.onrender.com/get_complaint/${requestId}`,
                 { withCredentials: true }
             );
             setComplaintDetail(response.data.complaint_detail);
@@ -570,7 +570,7 @@ const PackageStatus = () => {
     const handleUpdateComplaintStatus = async (ticketId) => {
         try {
             await axios.post(
-                `http://localhost:5000/api/update_complaint_status/${ticketId}`,
+                `https://imcc-bantu-1to1.onrender.com/api/update_complaint_status/${ticketId}`,
                 { complaint_status: newComplaintStatus }
             );
             setComplaintStatus(newComplaintStatus);
@@ -587,7 +587,7 @@ const PackageStatus = () => {
     const handleSubmitMentorDetails = async (ticketId, mentorName, mentorEmail) => {
         try {
             await axios.post(
-                `http://localhost:5000/addMentorDetails`,
+                `https://imcc-bantu-1to1.onrender.com/addMentorDetails`,
                 { packageRequestId: ticketId, mentorName: mentorName, mentorEmail: mentorEmail },
                 { withCredentials: true }
             );

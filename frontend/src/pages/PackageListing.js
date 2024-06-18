@@ -14,7 +14,7 @@ function PackageList() {
         const fetchUserRole = async () => {
             try {
                 const response = await axios.get(
-                    "http://localhost:5000/getUserRole",
+                    "https://imcc-bantu-1to1.onrender.com/getUserRole",
                     { withCredentials: true }
                 );
                 setUserRole(response.data.role);
@@ -30,7 +30,7 @@ function PackageList() {
         const fetchPackages = async () => {
             try {
                 const response = await axios.get(
-                    "http://localhost:5000/packageListing",
+                    "https://imcc-bantu-1to1.onrender.com/packageListing",
                     { withCredentials: true }
                 );
                 setPackages(response.data);
@@ -63,7 +63,7 @@ function PackageList() {
             formData.append("file", selectedFile);
             formData.append("package_id", packageId);
 
-            await axios.post("http://localhost:5000/uploadInvoice", formData, {
+            await axios.post("https://imcc-bantu-1to1.onrender.com/uploadInvoice", formData, {
                 withCredentials: true,
                 headers: {
                     "Content-Type": "multipart/form-data",
@@ -71,7 +71,7 @@ function PackageList() {
             });
 
             alert("Receipt uploaded successfully");
-            navigate("/ticketManagement");
+            navigate("https://imcc-bantu-1to1.onrender.com/ticketManagement");
         } catch (error) {
             console.error("Error uploading file:", error);
             setError(
