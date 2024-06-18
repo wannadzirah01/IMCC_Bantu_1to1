@@ -1,0 +1,15 @@
+{
+  "files": {
+    "main.css": "/wannadzirah01/IMCC_Bantu_1to1/static/css/main.dddabc05.css",
+    "main.js": "/wannadzirah01/IMCC_Bantu_1to1/static/js/main.c016df4d.js",
+    "static/js/453.d855a71b.chunk.js": "/wannadzirah01/IMCC_Bantu_1to1/static/js/453.d855a71b.chunk.js",
+    "index.html": "/wannadzirah01/IMCC_Bantu_1to1/index.html",
+    "main.dddabc05.css.map": "/wannadzirah01/IMCC_Bantu_1to1/static/css/main.dddabc05.css.map",
+    "main.c016df4d.js.map": "/wannadzirah01/IMCC_Bantu_1to1/static/js/main.c016df4d.js.map",
+    "453.d855a71b.chunk.js.map": "/wannadzirah01/IMCC_Bantu_1to1/static/js/453.d855a71b.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.dddabc05.css",
+    "static/js/main.c016df4d.js"
+  ]
+}
