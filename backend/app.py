@@ -1,6 +1,6 @@
 from urllib import response
 from flask_mail import Mail, Message
-from flask import Flask, request, jsonify, session, send_from_directory, render_template, make_response, current_app, Response
+from flask import Flask, request, jsonify, session, send_from_directory, render_template, make_response, current_app, Response, send_file
 from flask_bcrypt import Bcrypt
 from flask_cors import CORS
 from flask_session import Session
@@ -498,13 +498,25 @@ def get_ticket_counts():
     })
 
 
+# @app.route('/viewInvoiceFile/<filename>', methods=['GET'])
+# @login_required
+# def view_invoice_file(filename):
+#     try:
+#         return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+#     except FileNotFoundError:
+#         return jsonify({"error": "File not found"}), 404
+
+
 @app.route('/viewInvoiceFile/<filename>', methods=['GET'])
 @login_required
 def view_invoice_file(filename):
     try:
-        return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
-    except FileNotFoundError:
-        return jsonify({"error": "File not found"}), 404
+        blob = bucket.blob(filename)
+        file_path = f"/tmp/{filename}"  # Local file path to download the file from GCS
+        blob.download_to_filename(file_path)  # Download the file to local temporary directory
+        return send_file(file_path, as_attachment=True)  # Serve the file
+    except Exception as e:
+        return jsonify({"error": str(e)}), 404
 
 
 @app.route('/updateInvoiceStatus', methods=['POST'])
