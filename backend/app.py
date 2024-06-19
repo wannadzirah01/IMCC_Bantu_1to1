@@ -775,12 +775,12 @@ def update_package_request_status():
     if current_user.discriminator == "admin":
         body = f"Dear {package_request.user.name},\n\nYour package details status has been updated to: '{new_status}'\nPlease login into your account to view the subscribed Bantu 1-to-1 pakckage details.\n\nBest regards,\nIMCC Bantu 1-to-1 Admin"
 
-    client_email = package_request.user.email
-    subject = 'IMCC Bantu 1-to-1 Notifications'
+        client_email = package_request.user.email
+        subject = 'IMCC Bantu 1-to-1 Notifications'
 
-    msg = Message(subject, recipients=[client_email])
-    msg.body = body
-    mail.send(msg)
+        msg = Message(subject, recipients=[client_email])
+        msg.body = body
+        mail.send(msg)
 
     return jsonify({"message": "Package request status updated successfully"}), 200
 
